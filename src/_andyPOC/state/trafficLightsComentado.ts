@@ -7,7 +7,7 @@ interface TrafficLightState {
 }
 
 // Declaramos la clase que representa el semáforo y actúa como contexto del patrón State
-class TrafficLight {
+class TrafficLightC {
   // Propiedad privada que guarda el estado actual del semáforo
   private currentState: TrafficLightState;
 
@@ -37,7 +37,7 @@ class TrafficLight {
 }
 
 // Declaramos el estado concreto que representa el color rojo del semáforo
-class RedState implements TrafficLightState {
+class RedStateC implements TrafficLightState {
   // Definimos la transición desde el rojo hacia el estado verde
   handleNext(light: TrafficLight): void {
     // Mostramos por consola el cambio de color para seguimiento
@@ -54,7 +54,7 @@ class RedState implements TrafficLightState {
 }
 
 // Declaramos el estado concreto que representa el color verde del semáforo
-class GreenState implements TrafficLightState {
+class GreenStateC implements TrafficLightState {
   // Definimos la transición desde el verde hacia el estado amarillo
   handleNext(light: TrafficLight): void {
     // Mostramos por consola el cambio de color para seguimiento
@@ -71,7 +71,7 @@ class GreenState implements TrafficLightState {
 }
 
 // Declaramos el estado concreto que representa el color amarillo del semáforo
-class YellowState implements TrafficLightState {
+class YellowStateC implements TrafficLightState {
   // Definimos la transición desde el amarillo hacia el estado rojo
   handleNext(light: TrafficLight): void {
     // Mostramos por consola el cambio de color para seguimiento
@@ -88,7 +88,7 @@ class YellowState implements TrafficLightState {
 }
 
 // Creamos una nueva instancia del semáforo iniciando con el estado rojo
-const trafficLight = new TrafficLight(new RedState());
+const trafficLightC = new TrafficLight(new RedState());
 
 // Mostramos en consola el color con el que arranca el semáforo
 console.log(`Estado inicial: ${trafficLight.getColor()}`); // "Rojo"
