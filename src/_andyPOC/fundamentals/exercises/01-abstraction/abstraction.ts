@@ -48,6 +48,7 @@ export class PaymentFactory {
 export async function makePaymentOrchestrator(paymentProcessor: Payment) {
   paymentProcessor.process();
   paymentProcessor.refund();
+  paymentProcessor.tokenize();
 }
 
 export const initPayment = (gateway: string = 'cybersource') => { 
