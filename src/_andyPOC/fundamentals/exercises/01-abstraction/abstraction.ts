@@ -2,6 +2,7 @@
 export interface Payment { 
   process: () => void;
   refund: () => void;
+  tokenize: () => void;
 }
 
 export class PayUPayment implements Payment {
@@ -12,6 +13,10 @@ export class PayUPayment implements Payment {
   refund() {
     console.log('Refunding PayU payment...');
   }
+
+  tokenize() {
+    console.log('Tokenizing PayU payment...');
+  }
 }
 
 export class CyberSourcePayment implements Payment {
@@ -21,6 +26,10 @@ export class CyberSourcePayment implements Payment {
 
   refund() {
     console.log('Refunding CyberSource payment...');
+  }
+
+  tokenize() {
+    console.log('Tokenizing CyberSource payment...');
   }
 }
 

@@ -6,6 +6,10 @@ export const refundPayUPayment = () => {
   console.log('Refunding PayU payment...');
 }
 
+export const tokenizePayUPayment = () => {
+  console.log('Tokenizing PayU payment...');
+}
+
 export const processCyberSourcePayment = () => {
   console.log('Processing CyberSource payment...');
 }
@@ -14,15 +18,21 @@ export const refundCyberSourcePayment = () => {
   console.log('Refunding CyberSource payment...');
 }
 
+export const tokenizeCyberSourcePayment = () => {
+  console.log('Tokenizing CyberSource payment...');
+}
+
 export async function makePaymentOrchestrator(context: { gateway: string }) {
   if (context.gateway === 'payu') {
     processPayUPayment();
     refundPayUPayment();
+    tokenizePayUPayment();
   }
 
   if(context.gateway === 'cybersource') {
     processCyberSourcePayment();
     refundCyberSourcePayment();
+    tokenizeCyberSourcePayment();
   }
 }
 
@@ -30,7 +40,7 @@ export async function makePaymentOrchestrator(context: { gateway: string }) {
 // Evita efectos secundarios al importarlo desde tests.
 if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module) {
   const context = {
-    gateway: 'cybersource'
+    gateway: 'payu'
   };
   void makePaymentOrchestrator(context);
 }
