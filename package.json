@@ -15,7 +15,8 @@
     "codestyle:check": "tslint -c tslint.json -p tsconfig.json",
     "codestyle:fix": "tslint -c tslint.json -p tsconfig.json --fix",
     "test": "jest --no-cache --runInBand",
-    "test:watch": "jest --no-cache --runInBand --watch"
+    "test:watch": "jest --no-cache --runInBand --watch",
+    "watch:ts": "node --watch -r ts-node/register"
   },
   "dependencies": {
     "csv-parser": "^3.0.0",
