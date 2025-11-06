@@ -33,6 +33,20 @@ export class CyberSourcePayment implements Payment {
   }
 }
 
+export class LyraPayment implements Payment {
+  process() {
+    console.log('Processing Lyra payment...');
+  }
+
+  refund() {
+    console.log('Refunding Lyra payment...');
+  }
+
+  tokenize() {
+    console.log('Tokenizing Lyra payment...');
+  }
+}
+
 export class PaymentFactory {
   static createPaymentProcessor(gateway: string): Payment | null {
     if (gateway === 'payu') {

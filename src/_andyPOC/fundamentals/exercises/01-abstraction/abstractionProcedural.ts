@@ -22,6 +22,18 @@ export const tokenizeCyberSourcePayment = () => {
   console.log('Tokenizing CyberSource payment...');
 }
 
+export const processLyraPayment = () => {
+  console.log('Processing Lyra payment...');
+}
+
+export const refundLyraPayment = () => {
+  console.log('Refunding Lyra payment...');
+}
+
+export const tokenizeLyraPayment = () => {
+  console.log('Tokenizing Lyra payment...');
+}
+
 export async function makePaymentOrchestrator(context: { gateway: string }) {
   if (context.gateway === 'payu') {
     processPayUPayment();
@@ -33,6 +45,12 @@ export async function makePaymentOrchestrator(context: { gateway: string }) {
     processCyberSourcePayment();
     refundCyberSourcePayment();
     tokenizeCyberSourcePayment();
+  }
+
+  if(context.gateway === 'lyra') {
+    processLyraPayment();
+    refundLyraPayment();
+    tokenizeLyraPayment();
   }
 }
 
