@@ -34,6 +34,18 @@ export const tokenizeLyraPayment = () => {
   console.log('Tokenizing Lyra payment...');
 }
 
+export const processWorldpayPayment = () => {
+  console.log('Processing Worldpay payment...');
+}
+
+export const refundWorldpayPayment = () => {
+  console.log('Refunding Worldpay payment...');
+}
+
+export const tokenizeWorldpayPayment = () => {
+  console.log('Tokenizing Worldpay payment...');
+}
+
 export async function makePaymentOrchestrator(context: { gateway: string }) {
   if (context.gateway === 'payu') {
     processPayUPayment();
@@ -52,13 +64,19 @@ export async function makePaymentOrchestrator(context: { gateway: string }) {
     refundLyraPayment();
     tokenizeLyraPayment();
   }
+
+  if(context.gateway === 'worldpay') {
+    processWorldpayPayment();
+    refundWorldpayPayment();
+    tokenizeWorldpayPayment();
+  }
 }
 
 // Ejecuta el ejemplo solo cuando este archivo es el punto de entrada.
 // Evita efectos secundarios al importarlo desde tests.
 if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module) {
   const context = {
-    gateway: 'payu'
+    gateway: 'worldpay'
   };
   void makePaymentOrchestrator(context);
 }

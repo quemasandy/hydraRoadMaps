@@ -47,6 +47,20 @@ export class LyraPayment implements Payment {
   }
 }
 
+class WorldpayPayment implements Payment {
+  process() {
+    console.log('Processing Worldpay payment...');
+  }
+
+  refund() {
+    console.log('Refunding Worldpay payment...');
+  }
+
+  tokenize() {
+    console.log('Tokenizing Worldpay payment...');
+  }
+}
+
 export class PaymentFactory {
   static createPaymentProcessor(gateway: string): Payment | null {
     if (gateway === 'payu') {
@@ -54,6 +68,12 @@ export class PaymentFactory {
     }
     if (gateway === 'cybersource') {
       return new CyberSourcePayment();
+    }
+    if (gateway === 'lyra') {
+      return new LyraPayment();
+    }
+    if (gateway === 'worldpay') {
+      return new WorldpayPayment();
     }
     return null;
   }
@@ -85,5 +105,5 @@ export const initPayment = (gateway: string = 'cybersource') => {
 declare const require: any | undefined;
 declare const module: any | undefined;
 if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module) {
-  initPayment();
+  initPayment('worldpay');
 }
