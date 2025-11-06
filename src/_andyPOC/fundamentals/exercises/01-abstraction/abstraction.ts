@@ -1,17 +1,26 @@
 
 export interface Payment { 
   process: () => void;
+  refund: () => void;
 }
 
 export class PayUPayment implements Payment {
   process() {
     console.log('Processing PayU payment...');
   }
+
+  refund() {
+    console.log('Refunding PayU payment...');
+  }
 }
 
 export class CyberSourcePayment implements Payment {
   process() {
     console.log('Processing CyberSource payment...');
+  }
+
+  refund() {
+    console.log('Refunding CyberSource payment...');
   }
 }
 
@@ -29,6 +38,7 @@ export class PaymentFactory {
 
 export async function makePaymentOrchestrator(paymentProcessor: Payment) {
   paymentProcessor.process();
+  paymentProcessor.refund();
 }
 
 export const initPayment = (gateway: string = 'cybersource') => { 
