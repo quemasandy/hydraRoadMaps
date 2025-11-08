@@ -1,12 +1,13 @@
 import {
   PayUPayment,
   CyberSourcePayment,
+  LyraPayment,
   PaymentFactory,
   makePaymentOrchestrator,
   initPayment,
 } from './abstraction';
 
-describe('abstraction exercise: full coverage', () => {
+describe('abstraction (OO + Factory): full coverage', () => {
   let logSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -18,17 +19,53 @@ describe('abstraction exercise: full coverage', () => {
     logSpy.mockRestore();
   });
 
-  // Procesadores concretos
+  // Procesadores concretos: PayU
   it('PayUPayment.process() loguea el mensaje esperado', () => {
     const p = new PayUPayment();
     p.process();
     expect(logSpy).toHaveBeenCalledWith('Processing PayU payment...');
   });
 
+  it('PayUPayment.refund() loguea el mensaje esperado', () => {
+    const p = new PayUPayment();
+    p.refund();
+    expect(logSpy).toHaveBeenCalledWith('Refunding PayU payment...');
+  });
+
+  it('PayUPayment.tokenize() loguea el mensaje esperado', () => {
+    const p = new PayUPayment();
+    p.tokenize();
+    expect(logSpy).toHaveBeenCalledWith('Tokenizing PayU payment...');
+  });
+
+  // Procesadores concretos: CyberSource
   it('CyberSourcePayment.process() loguea el mensaje esperado', () => {
     const p = new CyberSourcePayment();
     p.process();
     expect(logSpy).toHaveBeenCalledWith('Processing CyberSource payment...');
+  });
+
+  it('CyberSourcePayment.refund() loguea el mensaje esperado', () => {
+    const p = new CyberSourcePayment();
+    p.refund();
+    expect(logSpy).toHaveBeenCalledWith('Refunding CyberSource payment...');
+  });
+
+  it('CyberSourcePayment.tokenize() loguea el mensaje esperado', () => {
+    const p = new CyberSourcePayment();
+    p.tokenize();
+    expect(logSpy).toHaveBeenCalledWith('Tokenizing CyberSource payment...');
+  });
+
+  // Procesadores concretos: Lyra
+  it('LyraPayment.process()/refund()/tokenize() loguean lo esperado', () => {
+    const p = new LyraPayment();
+    p.process();
+    p.refund();
+    p.tokenize();
+    expect(logSpy).toHaveBeenNthCalledWith(1, 'Processing Lyra payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(2, 'Refunding Lyra payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(3, 'Tokenizing Lyra payment...');
   });
 
   // Fábrica
@@ -42,27 +79,61 @@ describe('abstraction exercise: full coverage', () => {
     expect(p).toBeInstanceOf(CyberSourcePayment);
   });
 
+  it('PaymentFactory retorna LyraPayment para "lyra"', () => {
+    const p = PaymentFactory.createPaymentProcessor('lyra');
+    expect(p).toBeInstanceOf(LyraPayment);
+  });
+
+  it('PaymentFactory retorna un procesador válido para "worldpay"', () => {
+    const p = PaymentFactory.createPaymentProcessor('worldpay');
+    expect(p).not.toBeNull();
+    // No podemos verificar la clase (no exportada), pero sí que implementa la interfaz
+    expect(typeof (p as any)?.process).toBe('function');
+    expect(typeof (p as any)?.refund).toBe('function');
+    expect(typeof (p as any)?.tokenize).toBe('function');
+  });
+
   it('PaymentFactory retorna null para gateway desconocido', () => {
     const p = PaymentFactory.createPaymentProcessor('unknown');
     expect(p).toBeNull();
   });
 
   // Orquestador
-  it('makePaymentOrchestrator llama a process() del pago recibido', async () => {
-    const payment = { process: jest.fn() };
+  it('makePaymentOrchestrator llama a process/refund/tokenize', async () => {
+    const payment = { process: jest.fn(), refund: jest.fn(), tokenize: jest.fn() };
     await makePaymentOrchestrator(payment as any);
     expect(payment.process).toHaveBeenCalledTimes(1);
+    expect(payment.refund).toHaveBeenCalledTimes(1);
+    expect(payment.tokenize).toHaveBeenCalledTimes(1);
   });
 
   // initPayment (sin efectos colaterales ni exit en Jest)
-  it('initPayment por defecto procesa CyberSource', () => {
+  it('initPayment por defecto procesa CyberSource (process/refund/tokenize)', () => {
     initPayment();
-    expect(logSpy).toHaveBeenCalledWith('Processing CyberSource payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(1, 'Processing CyberSource payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(2, 'Refunding CyberSource payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(3, 'Tokenizing CyberSource payment...');
   });
 
-  it('initPayment("payu") procesa PayU', () => {
+  it('initPayment("payu") procesa PayU (process/refund/tokenize)', () => {
     initPayment('payu');
-    expect(logSpy).toHaveBeenCalledWith('Processing PayU payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(1, 'Processing PayU payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(2, 'Refunding PayU payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(3, 'Tokenizing PayU payment...');
+  });
+
+  it('initPayment("lyra") procesa Lyra (process/refund/tokenize)', () => {
+    initPayment('lyra');
+    expect(logSpy).toHaveBeenNthCalledWith(1, 'Processing Lyra payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(2, 'Refunding Lyra payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(3, 'Tokenizing Lyra payment...');
+  });
+
+  it('initPayment("worldpay") procesa Worldpay (process/refund/tokenize)', () => {
+    initPayment('worldpay');
+    expect(logSpy).toHaveBeenNthCalledWith(1, 'Processing Worldpay payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(2, 'Refunding Worldpay payment...');
+    expect(logSpy).toHaveBeenNthCalledWith(3, 'Tokenizing Worldpay payment...');
   });
 
   it('initPayment("unknown") no llama process() y no hace exit en tests', () => {
