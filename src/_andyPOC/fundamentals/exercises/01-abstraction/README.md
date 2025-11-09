@@ -40,3 +40,18 @@ collect(new LyraPayment());
 - `collect` permanece intacta al introducir nuevos proveedores.
 - El negocio conversa en términos de `Payment`, no de un proveedor específico.
 - La abstracción deja claro **qué** se hace (`process`) y encapsula **cómo** se logra en cada clase concreta.
+
+## Clases abstractas (mini-ejemplo)
+- Archivo: `abstract-classes.ts`
+- Qué muestra:
+  - Clase abstracta con método abstracto obligatorio (`process`) y hooks por defecto (`refund`).
+  - Subclases (`PayUPayment`, `LyraPayment`) que implementan el contrato.
+  - Función `collect` que trabaja contra la abstracción.
+
+Cómo ejecutarlo
+- Ejecuta `runDemo()` importando el archivo o como entrypoint:
+  - Ejemplo con ts-node: `ts-node design-patterns-typescript/src/_andyPOC/fundamentals/exercises/01-abstraction/abstract-classes.ts`
+  - O compila con TypeScript y ejecuta con Node.
+
+Tests
+- Archivo: `abstract-classes.test.ts` verifica el orden de logs del demo.

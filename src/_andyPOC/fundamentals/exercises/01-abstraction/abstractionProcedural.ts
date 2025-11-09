@@ -1,82 +1,106 @@
-export const processPayUPayment = () => {
-  console.log('Processing PayU payment...');
+interface Payment {
+  process(): void;
+  refund(): void;
+  tokenize(): void;
 }
 
-export const refundPayUPayment = () => {
-  console.log('Refunding PayU payment...');
+interface Context {
+  gateway: string;
 }
 
-export const tokenizePayUPayment = () => {
-  console.log('Tokenizing PayU payment...');
+interface createPayemntFactory {
+  (context: Context): Payment | undefined;
 }
 
-export const processCyberSourcePayment = () => {
-  console.log('Processing CyberSource payment...');
+const createPayU: () => Payment = () => {
+  return {
+    process: () => {
+      console.log('Processing PayU payment...');
+    },
+    refund: () => {
+      console.log('Refunding PayU payment...');
+    },
+    tokenize: () => {
+      console.log('Tokenizing PayU payment...');
+    },
+  };
+};
+
+const createCyberSource: () => Payment = () => {
+  return {
+    process: () => {
+      console.log('Processing CyberSource payment...');
+    },
+    refund: () => {
+      console.log('Refunding CyberSource payment...');
+    },
+    tokenize: () => {
+      console.log('Tokenizing CyberSource payment...');
+    },
+  };
+};
+
+const createLyra: () => Payment = () => {
+  return {
+    process: () => {
+      console.log('Processing Lyra payment...');
+    },
+    refund: () => {
+      console.log('Refunding Lyra payment...');
+    },
+    tokenize: () => {
+      console.log('Tokenizing Lyra payment...');
+    },
+
+  };
+};
+
+const createWorldPay: () => Payment = () => {
+  return {
+    process: () => {
+      console.log('Processing Worldpay payment...');
+    },
+    refund: () => {
+      console.log('Refunding Worldpay payment...');
+    },
+    tokenize: () => {
+      console.log('Tokenizing Worldpay payment...');
+    },
+  };
+};
+
+export async function makePaymentOrchestrator(payment: Payment) {
+  payment.process();
+  payment.refund();
+  payment.tokenize();
 }
 
-export const refundCyberSourcePayment = () => {
-  console.log('Refunding CyberSource payment...');
-}
-
-export const tokenizeCyberSourcePayment = () => {
-  console.log('Tokenizing CyberSource payment...');
-}
-
-export const processLyraPayment = () => {
-  console.log('Processing Lyra payment...');
-}
-
-export const refundLyraPayment = () => {
-  console.log('Refunding Lyra payment...');
-}
-
-export const tokenizeLyraPayment = () => {
-  console.log('Tokenizing Lyra payment...');
-}
-
-export const processWorldpayPayment = () => {
-  console.log('Processing Worldpay payment...');
-}
-
-export const refundWorldpayPayment = () => {
-  console.log('Refunding Worldpay payment...');
-}
-
-export const tokenizeWorldpayPayment = () => {
-  console.log('Tokenizing Worldpay payment...');
-}
-
-export async function makePaymentOrchestrator(context: { gateway: string }) {
+const createPayemntFactory: createPayemntFactory = (context) => {
   if (context.gateway === 'payu') {
-    processPayUPayment();
-    refundPayUPayment();
-    tokenizePayUPayment();
+    return createPayU();
   }
 
-  if(context.gateway === 'cybersource') {
-    processCyberSourcePayment();
-    refundCyberSourcePayment();
-    tokenizeCyberSourcePayment();
+  if (context.gateway === 'cybersource') {
+    return createCyberSource();
   }
 
-  if(context.gateway === 'lyra') {
-    processLyraPayment();
-    refundLyraPayment();
-    tokenizeLyraPayment();
+  if (context.gateway === 'lyra') {
+    return createLyra();
   }
 
-  if(context.gateway === 'worldpay') {
-    processWorldpayPayment();
-    refundWorldpayPayment();
-    tokenizeWorldpayPayment();
+  if (context.gateway === 'worldpay') {
+    return createWorldPay();
   }
-}
+};
 
 // Ejecuta el ejemplo solo cuando este archivo es el punto de entrada.
 // Evita efectos secundarios al importarlo desde tests.
 if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module) {
-  const context = {
-    gateway: 'worldpay'
-  };
-  void makePaymentOrchestrator(context);
+  const context = { gateway: 'payu' };
+
+  const payment = createPayemntFactory(context);
+  if (!payment) {
+    throw new Error('no payment for this gateway !!');
+  }
+  void makePaymentOrchestrator(payment);
 }
