@@ -1,0 +1,487 @@
+# Serverless Framework Configuration
+#
+# Framework popular para deploy de aplicaciones serverless
+# Más simple que SAM para casos de uso comunes
+#
+# Comandos útiles:
+#   serverless deploy              # Despliega todo
+#   serverless deploy function -f hello  # Despliega solo una función
+#   serverless invoke -f hello     # Invoca función en AWS
+#   serverless invoke local -f hello  # Invoca localmente
+#   serverless logs -f hello -t    # Ver logs en tiempo real
+#   serverless remove              # Elimina todo el stack
+#   serverless info                # Info del deployment
+
+service: serverless-typescript-example
+
+frameworkVersion: '3'
+
+# ==============================================================================
+# Provider Configuration
+# ==============================================================================
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 256
+  timeout: 30
+
+  # Variables de entorno globales
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    USERS_TABLE: ${self:custom.usersTableName}
+    PRODUCTS_TABLE: ${self:custom.productsTableName}
+
+  # IAM Role para todas las funciones
+  iam:
+    role:
+      statements:
+        # Permisos DynamoDB
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - !GetAtt UsersTable.Arn
+            - !GetAtt ProductsTable.Arn
+            - !Sub "${UsersTable.Arn}/index/*"
+            - !Sub "${ProductsTable.Arn}/index/*"
+
+        # Permisos S3
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - !Sub "${ImagesBucket.Arn}/*"
+
+        # Permisos SQS
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+          Resource:
+            - !GetAtt OrdersQueue.Arn
+
+  # X-Ray tracing
+  tracing:
+    lambda: true
+    apiGateway: true
+
+  # Logs
+  logs:
+    restApi: true
+
+# ==============================================================================
+# Custom Variables
+# ==============================================================================
+custom:
+  usersTableName: ${self:provider.stage}-users-table
+  productsTableName: ${self:provider.stage}-products-table
+
+  # Esbuild plugin para TypeScript
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    exclude:
+      - 'aws-sdk'
+    target: 'node20'
+    define:
+      'require.resolve': undefined
+    platform: 'node'
+    concurrency: 10
+
+  # Configuración de serverless-offline para desarrollo local
+  serverless-offline:
+    httpPort: 3000
+    lambdaPort: 3002
+
+  # Configuración de domains personalizados
+  customDomain:
+    domainName: api.example.com
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+
+# ==============================================================================
+# Plugins
+# ==============================================================================
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+  - serverless-domain-manager
+  - serverless-plugin-tracing
+
+# ==============================================================================
+# Functions
+# ==============================================================================
+functions:
+  # ----------------------------------------------------------------------------
+  # REST API - Users CRUD
+  # ----------------------------------------------------------------------------
+  getUsers:
+    handler: src/handlers/users.getAll
+    description: Get all users
+    events:
+      - http:
+          path: /users
+          method: get
+          cors: true
+          # Throttling
+          throttle:
+            rateLimit: 100
+            burstLimit: 200
+
+  getUser:
+    handler: src/handlers/users.getOne
+    description: Get user by ID
+    events:
+      - http:
+          path: /users/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+
+  createUser:
+    handler: src/handlers/users.create
+    description: Create new user
+    events:
+      - http:
+          path: /users
+          method: post
+          cors: true
+          # Validación de request
+          request:
+            schemas:
+              application/json: ${file(schemas/create-user.json)}
+
+  updateUser:
+    handler: src/handlers/users.update
+    description: Update user
+    events:
+      - http:
+          path: /users/{id}
+          method: put
+          cors: true
+
+  deleteUser:
+    handler: src/handlers/users.delete
+    description: Delete user
+    events:
+      - http:
+          path: /users/{id}
+          method: delete
+          cors: true
+
+  # ----------------------------------------------------------------------------
+  # S3 Event Processor
+  # ----------------------------------------------------------------------------
+  imageProcessor:
+    handler: src/handlers/imageProcessor.handler
+    description: Process uploaded images
+    memorySize: 1024
+    timeout: 60
+    events:
+      - s3:
+          bucket: ${self:provider.stage}-images
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploads/
+            - suffix: .jpg
+          existing: true
+
+  # ----------------------------------------------------------------------------
+  # SQS Consumer
+  # ----------------------------------------------------------------------------
+  orderProcessor:
+    handler: src/handlers/orderProcessor.handler
+    description: Process orders from queue
+    timeout: 60
+    events:
+      - sqs:
+          arn: !GetAtt OrdersQueue.Arn
+          batchSize: 10
+          maximumBatchingWindowInSeconds: 10
+          functionResponseType: ReportBatchItemFailures
+
+  # ----------------------------------------------------------------------------
+  # Scheduled Function (Cron)
+  # ----------------------------------------------------------------------------
+  dailyReport:
+    handler: src/handlers/reports.daily
+    description: Generate daily report
+    events:
+      - schedule:
+          rate: cron(0 9 * * ? *)  # 9 AM UTC daily
+          description: 'Daily report generation'
+          enabled: true
+
+  cleanup:
+    handler: src/handlers/cleanup.handler
+    description: Cleanup old records
+    events:
+      - schedule:
+          rate: rate(1 day)
+          enabled: true
+
+  # ----------------------------------------------------------------------------
+  # DynamoDB Stream
+  # ----------------------------------------------------------------------------
+  userStreamProcessor:
+    handler: src/handlers/streams.userStream
+    description: Process user table changes
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt UsersTable.StreamArn
+          batchSize: 10
+          startingPosition: LATEST
+          maximumRetryAttempts: 3
+
+  # ----------------------------------------------------------------------------
+  # SNS Topic
+  # ----------------------------------------------------------------------------
+  notificationHandler:
+    handler: src/handlers/notifications.handler
+    description: Handle notifications
+    events:
+      - sns:
+          arn: !Ref NotificationsTopic
+          topicName: ${self:provider.stage}-notifications
+
+  # ----------------------------------------------------------------------------
+  # EventBridge
+  # ----------------------------------------------------------------------------
+  orderCreatedHandler:
+    handler: src/handlers/events.orderCreated
+    description: Handle order created events
+    events:
+      - eventBridge:
+          eventBus: !GetAtt CustomEventBus.Arn
+          pattern:
+            source:
+              - com.myapp.orders
+            detail-type:
+              - OrderCreated
+
+  # ----------------------------------------------------------------------------
+  # Cognito Triggers
+  # ----------------------------------------------------------------------------
+  preSignUp:
+    handler: src/handlers/cognito.preSignUp
+    description: Pre sign up validation
+    events:
+      - cognitoUserPool:
+          pool: MyUserPool
+          trigger: PreSignUp
+          existing: true
+
+  # ----------------------------------------------------------------------------
+  # WebSocket API
+  # ----------------------------------------------------------------------------
+  wsConnect:
+    handler: src/handlers/websocket.connect
+    events:
+      - websocket:
+          route: $connect
+
+  wsDisconnect:
+    handler: src/handlers/websocket.disconnect
+    events:
+      - websocket:
+          route: $disconnect
+
+  wsMessage:
+    handler: src/handlers/websocket.message
+    events:
+      - websocket:
+          route: sendMessage
+
+# ==============================================================================
+# Resources - CloudFormation
+# ==============================================================================
+resources:
+  Resources:
+    # --------------------------------------------------------------------------
+    # DynamoDB Tables
+    # --------------------------------------------------------------------------
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.usersTableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+
+    ProductsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.productsTableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: productId
+            AttributeType: S
+          - AttributeName: category
+            AttributeType: S
+          - AttributeName: price
+            AttributeType: N
+        KeySchema:
+          - AttributeName: productId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: CategoryIndex
+            KeySchema:
+              - AttributeName: category
+                KeyType: HASH
+              - AttributeName: price
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    # --------------------------------------------------------------------------
+    # S3 Buckets
+    # --------------------------------------------------------------------------
+    ImagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.stage}-images-${aws:accountId}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        VersioningConfiguration:
+          Status: Enabled
+        LifecycleConfiguration:
+          Rules:
+            - Id: DeleteOldVersions
+              Status: Enabled
+              NoncurrentVersionExpirationInDays: 30
+
+    # --------------------------------------------------------------------------
+    # SQS Queues
+    # --------------------------------------------------------------------------
+    OrdersQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:provider.stage}-orders-queue
+        VisibilityTimeout: 180
+        MessageRetentionPeriod: 1209600
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt OrdersDLQ.Arn
+          maxReceiveCount: 3
+
+    OrdersDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:provider.stage}-orders-dlq
+        MessageRetentionPeriod: 1209600
+
+    # --------------------------------------------------------------------------
+    # SNS Topics
+    # --------------------------------------------------------------------------
+    NotificationsTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:provider.stage}-notifications
+        DisplayName: Notifications Topic
+
+    # --------------------------------------------------------------------------
+    # EventBridge
+    # --------------------------------------------------------------------------
+    CustomEventBus:
+      Type: AWS::Events::EventBus
+      Properties:
+        Name: ${self:provider.stage}-custom-events
+
+    # --------------------------------------------------------------------------
+    # CloudWatch Alarms
+    # --------------------------------------------------------------------------
+    GetUserErrorAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: ${self:provider.stage}-getUser-errors
+        AlarmDescription: Alert on Lambda errors
+        MetricName: Errors
+        Namespace: AWS/Lambda
+        Statistic: Sum
+        Period: 300
+        EvaluationPeriods: 1
+        Threshold: 5
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+          - Name: FunctionName
+            Value: !Ref GetUserLambdaFunction
+
+  # ----------------------------------------------------------------------------
+  # Outputs
+  # ----------------------------------------------------------------------------
+  Outputs:
+    ApiUrl:
+      Description: API Gateway endpoint URL
+      Value: !Sub https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}
+      Export:
+        Name: ${self:provider.stage}-ApiUrl
+
+    UsersTableName:
+      Description: Users table name
+      Value: !Ref UsersTable
+      Export:
+        Name: ${self:provider.stage}-UsersTable
+
+    OrdersQueueUrl:
+      Description: Orders queue URL
+      Value: !Ref OrdersQueue
+      Export:
+        Name: ${self:provider.stage}-OrdersQueueUrl
+
+# ==============================================================================
+# Package - Control what gets deployed
+# ==============================================================================
+package:
+  individually: true
+  patterns:
+    - '!node_modules/**'
+    - '!.git/**'
+    - '!.serverless/**'
+    - '!tests/**'
+    - '!*.md'
