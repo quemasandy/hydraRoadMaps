@@ -17,9 +17,9 @@ Cada ejercicio sigue un formato consistente y didáctico:
 7. **Ejercicios prácticos** de diferentes niveles (básico → experto)
 8. **Ejemplos ejecutables** - puedes correr cada archivo con ts-node
 
-## 📚 Ejercicios Completados
+## 📚 Ejercicios Completados (19 en total)
 
-### Nivel 1.1: Conceptos Básicos de TypeScript
+### Nivel 1.1: Conceptos Básicos de TypeScript (7/7) ✅
 
 #### ✅ 01 - Tipos Primitivos
 **Carpeta:** `01-tipos-primitivos/`
@@ -29,10 +29,7 @@ Cada ejercicio sigue un formato consistente y didáctico:
 - Por qué Big Tech usa centavos vs decimales
 - Prevención de errores financieros
 
-**Ejecutar:**
-```bash
-ts-node src/claudeExcercise/01-tipos-primitivos/index.ts
-```
+**Ejecutar:** `ts-node src/claudeExcercise/01-tipos-primitivos/index.ts`
 
 #### ✅ 02 - Arrays y Tuplas
 **Carpeta:** `02-arrays-tuplas/`
@@ -42,10 +39,7 @@ ts-node src/claudeExcercise/01-tipos-primitivos/index.ts
 - Tuplas para datos estructurados [timestamp, amount]
 - Respuestas de APIs [success, data, error]
 
-**Ejecutar:**
-```bash
-ts-node src/claudeExcercise/02-arrays-tuplas/index.ts
-```
+**Ejecutar:** `ts-node src/claudeExcercise/02-arrays-tuplas/index.ts`
 
 #### ✅ 03 - Enums
 **Carpeta:** `03-enums/`
@@ -55,10 +49,7 @@ ts-node src/claudeExcercise/02-arrays-tuplas/index.ts
 - Por qué Stripe usa string enums en su API
 - Const enums para optimización
 
-**Ejecutar:**
-```bash
-ts-node src/claudeExcercise/03-enums/index.ts
-```
+**Ejecutar:** `ts-node src/claudeExcercise/03-enums/index.ts`
 
 #### ✅ 04 - Any, Unknown, Never
 **Carpeta:** `04-any-unknown-never/`
@@ -68,10 +59,7 @@ ts-node src/claudeExcercise/03-enums/index.ts
 - unknown: validación type-safe de datos externos
 - never: exhaustive checking, funciones que no retornan
 
-**Ejecutar:**
-```bash
-ts-node src/claudeExcercise/04-any-unknown-never/index.ts
-```
+**Ejecutar:** `ts-node src/claudeExcercise/04-any-unknown-never/index.ts`
 
 #### ✅ 05 - Type Assertions
 **Carpeta:** `05-type-assertions/`
@@ -81,12 +69,7 @@ ts-node src/claudeExcercise/04-any-unknown-never/index.ts
 - Validar antes de assert
 - const assertions para inmutabilidad
 
-**Ejecutar:**
-```bash
-ts-node src/claudeExcercise/05-type-assertions/index.ts
-```
-
-### Nivel 1.1: Interfaces y Types
+**Ejecutar:** `ts-node src/claudeExcercise/05-type-assertions/index.ts`
 
 #### ✅ 06 - Interfaces
 **Carpeta:** `06-interfaces/`
@@ -96,10 +79,7 @@ ts-node src/claudeExcercise/05-type-assertions/index.ts
 - readonly para inmutabilidad
 - Extending para reutilización
 
-**Ejecutar:**
-```bash
-ts-node src/claudeExcercise/06-interfaces/index.ts
-```
+**Ejecutar:** `ts-node src/claudeExcercise/06-interfaces/index.ts`
 
 #### ✅ 07 - Type Aliases, Unions, Intersections
 **Carpeta:** `07-type-aliases-unions-intersections/`
@@ -109,10 +89,171 @@ ts-node src/claudeExcercise/06-interfaces/index.ts
 - Discriminated unions (Stripe event types)
 - Intersections para mixins
 
-**Ejecutar:**
-```bash
-ts-node src/claudeExcercise/07-type-aliases-unions-intersections/index.ts
-```
+**Ejecutar:** `ts-node src/claudeExcercise/07-type-aliases-unions-intersections/index.ts`
+
+### Nivel 1.1: Clases y Genéricos (2/2) ✅
+
+#### ✅ 08 - Clases en TypeScript
+**Carpeta:** `08-clases-typescript/`
+**Conceptos:** Propiedades, métodos, constructores, modificadores
+**Aplicación:** Payment classes, Error hierarchies
+- Modificadores de acceso (public, private, protected)
+- Getters y Setters con validación
+- Clases abstractas y Template Method
+- Herencia y polimorfismo
+
+**Ejecutar:** `ts-node src/claudeExcercise/08-clases-typescript/index.ts`
+
+#### ✅ 09 - Genéricos
+**Carpeta:** `09-genericos/`
+**Conceptos:** Funciones y clases genéricas, constraints
+**Aplicación:** Repository pattern, Result type, API responses
+- Type inference
+- Constraints (extends, keyof)
+- Interfaces genéricas
+- Utility types
+
+**Ejecutar:** `ts-node src/claudeExcercise/09-genericos/index.ts`
+
+### Nivel 1.2: Principios SOLID (5/5) ✅
+
+#### ✅ 10 - Single Responsibility Principle (SRP)
+**Carpeta:** `10-solid-srp/`
+**Concepto:** Una clase, una razón para cambiar
+**Aplicación:** Separación de validación, persistencia, notificaciones
+- Payment class refactoring
+- Service layer separation
+
+**Ejecutar:** `ts-node src/claudeExcercise/10-solid-srp/index.ts`
+
+#### ✅ 11 - Open/Closed Principle (OCP)
+**Carpeta:** `11-solid-ocp/`
+**Concepto:** Abierto para extensión, cerrado para modificación
+**Aplicación:** Payment methods extensibles, Plugin architecture
+- Strategy pattern
+- Abstract classes
+
+**Ejecutar:** `ts-node src/claudeExcercise/11-solid-ocp/index.ts`
+
+#### ✅ 12 - Liskov Substitution Principle (LSP)
+**Carpeta:** `12-solid-lsp/`
+**Concepto:** Subtipos deben ser sustituibles por tipos base
+**Aplicación:** Payment processors intercambiables
+- Precondiciones y postcondiciones
+- Contract compliance
+
+**Ejecutar:** `ts-node src/claudeExcercise/12-solid-lsp/index.ts`
+
+#### ✅ 13 - Interface Segregation Principle (ISP)
+**Carpeta:** `13-solid-isp/`
+**Concepto:** Interfaces pequeñas y cohesivas
+**Aplicación:** Payment capabilities (Refundable, Recurring, etc.)
+- Segregated interfaces
+- Composition of capabilities
+
+**Ejecutar:** `ts-node src/claudeExcercise/13-solid-isp/index.ts`
+
+#### ✅ 14 - Dependency Inversion Principle (DIP)
+**Carpeta:** `14-solid-dip/`
+**Concepto:** Depender de abstracciones, no de concreciones
+**Aplicación:** Payment gateway abstraction, Dependency injection
+- Interface-based design
+- DI containers
+
+**Ejecutar:** `ts-node src/claudeExcercise/14-solid-dip/index.ts`
+
+### Nivel 1.3: Conceptos Fundamentales (5/5) ✅
+
+#### ✅ 15 - Composición vs Herencia
+**Carpeta:** `15-composicion-vs-herencia/`
+**Concepto:** Favor composition over inheritance
+**Aplicación:** Employee roles, Payment with composed behaviors
+- IS-A vs HAS-A relationships
+- Mixins pattern
+
+**Ejecutar:** `ts-node src/claudeExcercise/15-composicion-vs-herencia/index.ts`
+
+#### ✅ 16 - Acoplamiento y Cohesión
+**Carpeta:** `16-acoplamiento-cohesion/`
+**Conceptos:** Coupling vs Cohesion, métricas (Ca, Ce, LCOM)
+**Aplicación:** Microservicios desacoplados, módulos cohesivos
+- Tipos de acoplamiento (Content, Common, Stamp, Data)
+- Tipos de cohesión (Functional, Communicational, etc.)
+- Event-driven architecture para bajo acoplamiento
+- Dependency Injection
+
+**Ejecutar:** `ts-node src/claudeExcercise/16-acoplamiento-cohesion/index.ts`
+
+#### ✅ 17 - Encapsulación
+**Carpeta:** `17-encapsulacion/`
+**Conceptos:** Information hiding, public/private interfaces
+**Aplicación:** Stripe PaymentIntent, encapsulación de complejidad
+- Modificadores de acceso (public, private, protected, readonly)
+- Getters/Setters con validación
+- "Tell, Don't Ask" principle
+- Encapsulación de colecciones
+
+**Ejecutar:** `ts-node src/claudeExcercise/17-encapsulacion/index.ts`
+
+#### ✅ 18 - Abstracción
+**Carpeta:** `18-abstraccion/`
+**Conceptos:** Abstract classes, interfaces, niveles de abstracción
+**Aplicación:** Payment gateway abstraction, Facade pattern
+- Ocultar complejidad de implementación
+- Niveles de abstracción (HTTP → API → Service → Business Logic)
+- Evitar "leaky abstractions"
+- Template Method pattern
+
+**Ejecutar:** `ts-node src/claudeExcercise/18-abstraccion/index.ts`
+
+#### ✅ 19 - Polimorfismo
+**Carpeta:** `19-polimorfismo/`
+**Conceptos:** Subtype, Ad-hoc, Parametric polymorphism
+**Aplicación:** Payment methods polimórficos, Strategy pattern
+- Subtype polymorphism (interfaces, herencia)
+- Ad-hoc polymorphism (function overloading)
+- Parametric polymorphism (genéricos)
+- Eliminar switch statements con polimorfismo
+
+**Ejecutar:** `ts-node src/claudeExcercise/19-polimorfismo/index.ts`
+
+---
+
+## 📊 Estadísticas
+
+- **Total de ejercicios:** 19 completados
+- **Líneas de código:** ~20,000+
+- **Conceptos cubiertos:** TypeScript completo + SOLID + Conceptos Fundamentales OOP
+- **Ejemplos ejecutables:** 100%
+- **Enfoque billing/payments:** Todos los ejercicios
+- **Preguntas reflexivas:** 152+ (8 por ejercicio)
+- **Ejercicios prácticos:** 76+ desafíos (4 niveles × 19 ejercicios)
+
+## 🚀 Ejercicios Pendientes
+
+Ver `PROGRESS.md` para lista completa de ejercicios pendientes, que incluye:
+
+### Nivel 2 - Patrones Creacionales (5 patrones)
+- [ ] Singleton, Factory Method, Abstract Factory
+- [ ] Builder, Prototype
+
+### Nivel 3 - Patrones Estructurales (7 patrones)
+- [ ] Adapter, Facade, Composite, Decorator
+- [ ] Proxy, Bridge, Flyweight
+
+### Nivel 4 - Patrones de Comportamiento (11 patrones)
+- [ ] Observer, Mediator, Chain of Responsibility
+- [ ] Strategy, Template Method, Command
+- [ ] State, Iterator, Visitor
+- [ ] Memento, Interpreter
+
+### Niveles 5-6 - Patrones Arquitectónicos y Avanzados (20+ patrones)
+- [ ] MVC, MVP, MVVM, Repository, DDD
+- [ ] Event Sourcing, CQRS, API Gateway
+- [ ] Monads, Functors, Async Patterns
+- [ ] Performance Patterns
+
+**Total estimado:** ~41+ ejercicios adicionales
 
 ## 🎯 Cómo usar estos ejercicios
 
@@ -127,6 +268,7 @@ Cada archivo está densamente comentado. Lee los comentarios para entender:
 ```bash
 # Ejecutar un ejercicio específico
 ts-node src/claudeExcercise/01-tipos-primitivos/index.ts
+ts-node src/claudeExcercise/10-solid-srp/index.ts
 
 # Ver la salida y entender el flujo
 ```
@@ -144,40 +286,8 @@ Al final de cada ejercicio hay 4 niveles de desafíos:
 - **Experto:** Diseño de sistemas complejos
 
 ### 5. **Responder las preguntas**
-Cada ejercicio incluye preguntas para profundizar.
+Cada ejercicio incluye 8 preguntas para profundizar.
 Investiga las respuestas para solidificar tu comprensión.
-
-## 🚀 Próximos pasos
-
-### Ejercicios pendientes (según roadmap):
-
-#### Nivel 1.1 - Conceptos Básicos de TypeScript
-- [ ] Clases en TypeScript (6 sub-ejercicios)
-  - Propiedades y métodos
-  - Constructores
-  - Modificadores de acceso
-  - Getters y Setters
-  - Clases abstractas
-  - Herencia y polimorfismo
-- [ ] Genéricos (4 sub-ejercicios)
-  - Funciones genéricas
-  - Clases genéricas
-  - Constraints en genéricos
-  - Genéricos en interfaces
-
-#### Nivel 1.2 - Principios SOLID
-- [ ] Single Responsibility Principle (SRP)
-- [ ] Open/Closed Principle (OCP)
-- [ ] Liskov Substitution Principle (LSP)
-- [ ] Interface Segregation Principle (ISP)
-- [ ] Dependency Inversion Principle (DIP)
-
-#### Nivel 1.3 - Conceptos Fundamentales
-- [ ] Composición vs Herencia
-- [ ] Acoplamiento y Cohesión
-- [ ] Encapsulación
-- [ ] Abstracción
-- [ ] Polimorfismo
 
 ## 💡 Patrón para crear nuevos ejercicios
 
@@ -203,12 +313,13 @@ Usa los ejercicios existentes como plantilla. Cada uno debe incluir:
 
 // Secciones del ejercicio:
 // 1. Conceptos básicos con ejemplos
-// 2. Casos de uso prácticos
-// 3. Demostración ejecutable
+// 2. Violación del principio/patrón (qué NO hacer)
+// 3. Implementación correcta (qué SÍ hacer)
 // 4. Casos de uso en billing & payments
-// 5. Mejores prácticas
-// 6. Preguntas para reflexionar
+// 5. Mejores prácticas y errores comunes
+// 6. Preguntas para reflexionar (8 mínimo)
 // 7. Ejercicios prácticos (4 niveles)
+// 8. Exports para reutilización
 ```
 
 ## 📖 Recursos adicionales
@@ -216,6 +327,7 @@ Usa los ejercicios existentes como plantilla. Cada uno debe incluir:
 - **TypeScript Handbook:** https://www.typescriptlang.org/docs/handbook/
 - **Stripe API Docs:** https://stripe.com/docs/api (para ejemplos reales)
 - **Refactoring.Guru:** https://refactoring.guru/design-patterns/typescript
+- **PROGRESS.md:** Tracking completo de ejercicios completados y pendientes
 
 ## 🤝 Contribuir
 
@@ -225,6 +337,7 @@ Si creas ejercicios adicionales:
 3. Enfócate en aplicaciones de billing/payments cuando sea posible
 4. Documenta exhaustivamente con comentarios
 5. Incluye preguntas y desafíos
+6. Actualiza PROGRESS.md
 
 ## 📝 Notas
 
