@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-sql-learning
+    environment:
+      POSTGRES_USER: sqluser
+      POSTGRES_PASSWORD: sqlpass123
+      POSTGRES_DB: learning_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql-scripts:/sql-scripts
+      - ./backups:/backups
+    networks:
+      - sql-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sqluser -d learning_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - Web UI for PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-sql-learning
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - sql-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Redis - For caching exercises
+  redis:
+    image: redis:7-alpine
+    container_name: redis-sql-learning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sql-network
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  sql-network:
+    driver: bridge
+
+# Usage:
+# 1. Copy this file to docker-compose.yml
+# 2. Run: docker-compose up -d
+# 3. Access pgAdmin at http://localhost:5050
+# 4. Connect to PostgreSQL:
+#    - Host: postgres
+#    - Port: 5432
+#    - Database: learning_db
+#    - Username: sqluser
+#    - Password: sqlpass123
