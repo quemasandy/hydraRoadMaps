@@ -1,0 +1,371 @@
+# AWS SAM (Serverless Application Model) Template
+#
+# SAM es una extensión de CloudFormation específica para serverless
+# Simplifica la definición de funciones Lambda, APIs, y tablas DynamoDB
+#
+# Comandos útiles:
+#   sam build                    # Compila el código TypeScript
+#   sam deploy --guided          # Despliega (primera vez, configuración)
+#   sam deploy                   # Despliega (subsecuentes)
+#   sam local start-api          # API local para testing
+#   sam local invoke "Function"  # Invoca función localmente
+#   sam logs -n HelloWorldFunction --tail  # Ver logs en tiempo real
+#   sam delete                   # Elimina el stack completo
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-typescript-example
+
+  Example SAM template for TypeScript Lambda functions
+
+# ==============================================================================
+# Globals - Configuración compartida por todas las funciones
+# ==============================================================================
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        NODE_ENV: production
+        LOG_LEVEL: info
+    # Tracing con X-Ray para todas las funciones
+    Tracing: Active
+
+  Api:
+    # CORS para toda la API
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+      AllowOrigin: "'*'"
+
+# ==============================================================================
+# Parameters - Valores configurables al desplegar
+# ==============================================================================
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+
+  TableName:
+    Type: String
+    Default: UsersTable
+    Description: Name of the DynamoDB table
+
+# ==============================================================================
+# Resources - Recursos AWS a crear
+# ==============================================================================
+Resources:
+  # ----------------------------------------------------------------------------
+  # 1. Lambda Function Básica
+  # ----------------------------------------------------------------------------
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/hello.handler
+      Description: Simple Hello World function
+
+      # Event que triggerea la función (API Gateway)
+      Events:
+        HelloWorldApi:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: get
+
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+          - handlers/hello.ts
+
+  # ----------------------------------------------------------------------------
+  # 2. Lambda con Variables de Entorno
+  # ----------------------------------------------------------------------------
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/users.getUser
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          REGION: !Ref AWS::Region
+
+      # Permisos IAM para acceder a DynamoDB
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+      Events:
+        GetUser:
+          Type: Api
+          Properties:
+            Path: /users/{id}
+            Method: get
+
+  # ----------------------------------------------------------------------------
+  # 3. Lambda con Permisos Personalizados
+  # ----------------------------------------------------------------------------
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/users.createUser
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+
+      Policies:
+        # Política inline personalizada
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt UsersTable.Arn
+
+      Events:
+        CreateUser:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: post
+
+  # ----------------------------------------------------------------------------
+  # 4. Lambda con S3 Trigger
+  # ----------------------------------------------------------------------------
+  ImageProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/imageProcessor.handler
+      Timeout: 60
+      MemorySize: 1024  # Más memoria para procesamiento de imágenes
+      Environment:
+        Variables:
+          THUMBNAILS_BUCKET: !Ref ThumbnailsBucket
+
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ImagesBucket
+        - S3CrudPolicy:
+            BucketName: !Ref ThumbnailsBucket
+
+      Events:
+        ImageUpload:
+          Type: S3
+          Properties:
+            Bucket: !Ref ImagesBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: uploads/
+                  - Name: suffix
+                    Value: .jpg
+
+  # ----------------------------------------------------------------------------
+  # 5. Lambda con Scheduled Event (Cron)
+  # ----------------------------------------------------------------------------
+  CleanupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/cleanup.handler
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+      Events:
+        # Ejecutar cada día a las 2 AM UTC
+        DailyCleanup:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 2 * * ? *)'
+            Description: Daily cleanup of old records
+            Enabled: true
+
+  # ----------------------------------------------------------------------------
+  # 6. Lambda con SQS Trigger
+  # ----------------------------------------------------------------------------
+  OrderProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/orderProcessor.handler
+      Timeout: 60
+
+      Policies:
+        - SQSPollerPolicy:
+            QueueName: !GetAtt OrdersQueue.QueueName
+
+      Events:
+        OrdersQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OrdersQueue.Arn
+            BatchSize: 10
+            # Solo eliminar mensajes si la función retorna exitosamente
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+  # ----------------------------------------------------------------------------
+  # 7. DynamoDB Table
+  # ----------------------------------------------------------------------------
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Environment}-${TableName}
+      BillingMode: PAY_PER_REQUEST  # On-demand (recomendado para dev)
+
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+      # Global Secondary Index para buscar por email
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+      # TTL para auto-eliminación de registros expirados
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+      # Habilitar DynamoDB Streams
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+      # Point-in-time recovery (backup)
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ----------------------------------------------------------------------------
+  # 8. S3 Buckets
+  # ----------------------------------------------------------------------------
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-images-${AWS::AccountId}
+      # Bloquear acceso público
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+      # Lifecycle rules
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldImages
+            Status: Enabled
+            ExpirationInDays: 90
+
+      # Versionamiento
+      VersioningConfiguration:
+        Status: Enabled
+
+  ThumbnailsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-thumbnails-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ----------------------------------------------------------------------------
+  # 9. SQS Queue con Dead Letter Queue
+  # ----------------------------------------------------------------------------
+  OrdersQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-orders-queue
+      VisibilityTimeout: 180  # 3 minutos (3x el timeout de Lambda)
+      MessageRetentionPeriod: 1209600  # 14 días
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt OrdersDeadLetterQueue.Arn
+        maxReceiveCount: 3  # Intentar 3 veces antes de mover a DLQ
+
+  OrdersDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-orders-dlq
+      MessageRetentionPeriod: 1209600  # 14 días
+
+  # ----------------------------------------------------------------------------
+  # 10. CloudWatch Log Groups (opcional pero recomendado)
+  # ----------------------------------------------------------------------------
+  HelloWorldFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${HelloWorldFunction}
+      RetentionInDays: 7  # Retener logs 7 días (reducir costos)
+
+# ==============================================================================
+# Outputs - Valores de salida después del deploy
+# ==============================================================================
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiEndpoint
+
+  UsersTableName:
+    Description: "DynamoDB Users table name"
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub ${AWS::StackName}-UsersTable
+
+  UsersTableArn:
+    Description: "DynamoDB Users table ARN"
+    Value: !GetAtt UsersTable.Arn
+
+  ImagesBucketName:
+    Description: "S3 bucket for images"
+    Value: !Ref ImagesBucket
+
+  OrdersQueueUrl:
+    Description: "SQS Orders queue URL"
+    Value: !Ref OrdersQueue
+
+  Region:
+    Description: "AWS Region"
+    Value: !Ref AWS::Region
