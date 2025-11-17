@@ -12,3 +12,5 @@ node_modules
 # System files
 .DS_Store
 out
+node_modules
+.DS_Store
