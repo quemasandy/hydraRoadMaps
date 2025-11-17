@@ -1,8 +1,16 @@
+# IDE - Editor files
 .idea
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Dependencies
+node_modules
+
+# System files
+.DS_Store
+out
 node_modules
 .DS_Store
