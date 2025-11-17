@@ -1,6 +1,6 @@
 # 📊 Progreso de Ejercicios - TypeScript y Patrones de Diseño
 
-## ✅ Ejercicios Completados (19 de 60+)
+## ✅ Ejercicios Completados (24 de 60+)
 
 ### Nivel 1.1: Conceptos Básicos de TypeScript (7/7) ✅
 
@@ -94,35 +94,39 @@
     - Overloading y overriding
     - Strategy pattern
 
+### Nivel 2: Patrones Creacionales (5/5) ✅
+
+20. **20-singleton** ✅
+    - Una sola instancia, acceso global
+    - Thread-safe implementation
+    - Configuration, Logger, Connection pool
+    - Testing con reset()
+
+21. **21-factory-method** ✅
+    - Virtual constructor pattern
+    - Subclases deciden qué crear
+    - Payment processors, Notifications
+    - Open/Closed Principle
+
+22. **22-abstract-factory** ✅
+    - Familias de objetos relacionados
+    - Multi-region payment systems
+    - Test vs Production factories
+    - Consistencia entre productos
+
+23. **23-builder** ✅
+    - Construcción paso a paso
+    - Fluent interface
+    - Payment intents, Invoices, HTTP requests
+    - Inmutabilidad y validación
+
+24. **24-prototype** ✅
+    - Clonación de objetos
+    - Shallow vs Deep copy
+    - Invoice templates, Undo/Redo
+    - Prototype Registry
+
 ## 📋 Ejercicios Pendientes
-
-### Nivel 2: Patrones Creacionales (5 patrones principales)
-
-#### 2.1 Patrones Básicos (3)
-
-- [ ] **20-singleton**
-  - Una sola instancia
-  - Thread-safe implementation
-  - Casos de uso: Logger, Config, Cache
-
-- [ ] **21-factory-method**
-  - Delegar creación a subclases
-  - Virtual constructor pattern
-
-- [ ] **22-abstract-factory**
-  - Familias de objetos relacionados
-  - Cross-platform UI, DB connectors
-
-#### 2.2 Patrones Intermedios (2)
-
-- [ ] **23-builder**
-  - Construcción paso a paso
-  - Fluent interfaces
-  - Query builders, HTTP request builders
-
-- [ ] **24-prototype**
-  - Clonación de objetos
-  - Deep copy vs shallow copy
 
 ### Nivel 3: Patrones Estructurales (7 patrones)
 
@@ -234,18 +238,18 @@
 ## 📈 Estadísticas
 
 ### Completado
-- **Total de ejercicios creados:** 19
-- **Líneas de código:** ~20,000+
-- **Conceptos cubiertos:** TypeScript completo + SOLID + Conceptos Fundamentales OOP (completo Nivel 1)
+- **Total de ejercicios creados:** 24
+- **Líneas de código:** ~27,000+
+- **Conceptos cubiertos:** TypeScript + SOLID + OOP Fundamentals + Patrones Creacionales (Niveles 1-2 completos)
 - **Ejemplos de billing/payments:** Todos los ejercicios
-- **Uso en Big Tech:** Stripe, PayPal, Amazon, Google, etc.
-- **Preguntas reflexivas:** 8 por ejercicio (152+ total)
-- **Ejercicios prácticos:** 4 niveles por ejercicio (76+ desafíos)
+- **Uso en Big Tech:** Stripe, PayPal, Amazon, Google, AWS, etc.
+- **Preguntas reflexivas:** 8 por ejercicio (192+ total)
+- **Ejercicios prácticos:** 4 niveles por ejercicio (96+ desafíos)
 
 ### Pendiente
-- **Ejercicios restantes:** ~41+ ejercicios de patrones
-- **Tiempo estimado:** 45-90 horas de desarrollo
-- **Líneas de código estimadas:** ~45,000+
+- **Ejercicios restantes:** ~36+ ejercicios de patrones
+- **Tiempo estimado:** 40-80 horas de desarrollo
+- **Líneas de código estimadas:** ~40,000+
 
 ## 🎯 Próximos Pasos Recomendados
 
@@ -253,17 +257,21 @@
 1. ✅ Ejercicios 16-19 (Conceptos Fundamentales) - COMPLETO
 2. ✅ Nivel 1 totalmente completado (19/19 ejercicios)
 
-### Opción 2: Patrones Esenciales (Medio Plazo) - SIGUIENTE
-1. Crear Patrones Creacionales completos (20-24) - 5 ejercicios
-2. Crear Patrones Estructurales completos (25-31) - 7 ejercicios
-3. **Tiempo:** ~15-25 horas
-4. **Total:** 12 ejercicios adicionales
+### ✅ Opción 2: Patrones Creacionales (COMPLETADO)
+1. ✅ Ejercicios 20-24 (Patrones Creacionales) - COMPLETO
+2. ✅ Nivel 2 totalmente completado (5/5 ejercicios)
+3. ✅ Singleton, Factory Method, Abstract Factory, Builder, Prototype
 
-### Opción 3: Curriculum Completo (Largo Plazo)
-1. Todos los patrones GoF (20-42) - 23 ejercicios
+### Opción 3: Patrones Estructurales (Corto Plazo) - SIGUIENTE
+1. Crear Patrones Estructurales completos (25-31) - 7 ejercicios
+2. **Tiempo:** ~10-15 horas
+3. Adapter, Facade, Composite, Decorator, Proxy, Bridge, Flyweight
+
+### Opción 4: Curriculum Completo (Largo Plazo)
+1. Todos los patrones GoF (25-42) - 18 ejercicios restantes
 2. Patrones arquitectónicos - ~10 ejercicios
 3. Patrones avanzados - ~15 ejercicios
-4. **Tiempo:** 45-90 horas
+4. **Tiempo:** 40-80 horas
 
 ## 💡 Cómo Continuar
 
@@ -368,6 +376,6 @@ Cada ejercicio mantiene el mismo estándar de excelencia:
 
 ---
 
-**Estado:** En progreso - Nivel 1 COMPLETADO (19/19), patrones pendientes
+**Estado:** En progreso - Niveles 1-2 COMPLETADOS (24/24), patrones pendientes
 **Última actualización:** 2025-01-17
-**Próximo objetivo:** Nivel 2 - Patrones Creacionales (20-24)
+**Próximo objetivo:** Nivel 3 - Patrones Estructurales (25-31)

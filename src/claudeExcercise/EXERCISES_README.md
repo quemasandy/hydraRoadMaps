@@ -217,25 +217,78 @@ Cada ejercicio sigue un formato consistente y didáctico:
 
 **Ejecutar:** `ts-node src/claudeExcercise/19-polimorfismo/index.ts`
 
+### Nivel 2: Patrones Creacionales (5/5) ✅
+
+#### ✅ 20 - Singleton Pattern
+**Carpeta:** `20-singleton/`
+**Conceptos:** Una sola instancia, acceso global, thread-safe
+**Aplicación:** Configuration manager, Logger, Connection pool, Cache
+- Lazy initialization
+- Testing con reset()
+- Alternativa: Dependency Injection
+- Problemas del Singleton (anti-pattern)
+
+**Ejecutar:** `ts-node src/claudeExcercise/20-singleton/index.ts`
+
+#### ✅ 21 - Factory Method Pattern
+**Carpeta:** `21-factory-method/`
+**Conceptos:** Virtual constructor, subclases deciden qué crear
+**Aplicación:** Payment processors, Notification senders, Invoice generators
+- Desacopla creación de uso
+- Open/Closed Principle
+- Template Method integration
+- Factory Method vs Simple Factory
+
+**Ejecutar:** `ts-node src/claudeExcercise/21-factory-method/index.ts`
+
+#### ✅ 22 - Abstract Factory Pattern
+**Carpeta:** `22-abstract-factory/`
+**Conceptos:** Familias de objetos relacionados
+**Aplicación:** Multi-region payment systems, Test vs Production, UI themes
+- Asegura consistencia entre productos
+- Stripe/PayPal families
+- Regional payment processing (US/EU)
+- Abstract Factory vs Factory Method
+
+**Ejecutar:** `ts-node src/claudeExcercise/22-abstract-factory/index.ts`
+
+#### ✅ 23 - Builder Pattern
+**Carpeta:** `23-builder/`
+**Conceptos:** Construcción paso a paso, Fluent interface
+**Aplicación:** Payment intents, Invoices, HTTP requests, SQL queries
+- Inmutabilidad en producto final
+- Validación en build()
+- Director pattern
+- Construcción condicional
+
+**Ejecutar:** `ts-node src/claudeExcercise/23-builder/index.ts`
+
+#### ✅ 24 - Prototype Pattern
+**Carpeta:** `24-prototype/`
+**Conceptos:** Clonación de objetos, Shallow vs Deep copy
+**Aplicación:** Invoice templates, Product variants, Undo/Redo
+- Prototype Registry
+- Performance (clonar vs crear)
+- structuredClone(), spread operator
+- State snapshots
+
+**Ejecutar:** `ts-node src/claudeExcercise/24-prototype/index.ts`
+
 ---
 
 ## 📊 Estadísticas
 
-- **Total de ejercicios:** 19 completados
-- **Líneas de código:** ~20,000+
-- **Conceptos cubiertos:** TypeScript completo + SOLID + Conceptos Fundamentales OOP
+- **Total de ejercicios:** 24 completados
+- **Líneas de código:** ~27,000+
+- **Conceptos cubiertos:** TypeScript + SOLID + OOP Fundamentals + Patrones Creacionales
 - **Ejemplos ejecutables:** 100%
 - **Enfoque billing/payments:** Todos los ejercicios
-- **Preguntas reflexivas:** 152+ (8 por ejercicio)
-- **Ejercicios prácticos:** 76+ desafíos (4 niveles × 19 ejercicios)
+- **Preguntas reflexivas:** 192+ (8 por ejercicio)
+- **Ejercicios prácticos:** 96+ desafíos (4 niveles × 24 ejercicios)
 
 ## 🚀 Ejercicios Pendientes
 
 Ver `PROGRESS.md` para lista completa de ejercicios pendientes, que incluye:
-
-### Nivel 2 - Patrones Creacionales (5 patrones)
-- [ ] Singleton, Factory Method, Abstract Factory
-- [ ] Builder, Prototype
 
 ### Nivel 3 - Patrones Estructurales (7 patrones)
 - [ ] Adapter, Facade, Composite, Decorator
@@ -253,7 +306,7 @@ Ver `PROGRESS.md` para lista completa de ejercicios pendientes, que incluye:
 - [ ] Monads, Functors, Async Patterns
 - [ ] Performance Patterns
 
-**Total estimado:** ~41+ ejercicios adicionales
+**Total estimado:** ~36+ ejercicios adicionales
 
 ## 🎯 Cómo usar estos ejercicios
 
