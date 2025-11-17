@@ -1,0 +1,1 @@
+/** Token Refresh */ export class TokenRefreshDemo { static demonstrate() { console.log('\n=== Token Refresh ===\n'); console.log('Access Token: Short-lived (15min)'); console.log('Refresh Token: Long-lived (days/weeks)'); console.log('Use refresh token to get new access token'); }} if (require.main === module) { TokenRefreshDemo.demonstrate(); }

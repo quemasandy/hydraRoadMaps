@@ -1,0 +1,1 @@
+/** Encryption in Transit */ export class EncryptionInTransit { static demonstrate() { console.log('\n=== Encryption in Transit ==='); console.log('TLS 1.3 for all network communication'); console.log('Certificates for authentication'); console.log('Perfect Forward Secrecy'); }} if (require.main === module) { EncryptionInTransit.demonstrate(); }

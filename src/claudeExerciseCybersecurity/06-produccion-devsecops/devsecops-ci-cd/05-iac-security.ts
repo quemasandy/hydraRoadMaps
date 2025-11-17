@@ -1,0 +1,1 @@
+/** IaC Security */ export class IaCScanner { static scan(template: string) { console.log('\n=== IaC Security ==='); console.log(`Scanning: ${template}`); console.log('Check for: Public S3, open security groups, hardcoded secrets'); console.log('Tools: tfsec, Checkov, cfn-nag'); }} if (require.main === module) { IaCScanner.scan('terraform/main.tf'); }

@@ -1,0 +1,1 @@
+/** Envelope Encryption */ export class EnvelopeEncryption { static demonstrate() { console.log('\n=== Envelope Encryption ==='); console.log('DEK (Data Encryption Key): Encrypts data'); console.log('KEK (Key Encryption Key): Encrypts DEK'); console.log('Use case: Cloud encryption (AWS KMS, GCP)'); }} if (require.main === module) { EnvelopeEncryption.demonstrate(); }

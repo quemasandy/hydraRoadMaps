@@ -1,0 +1,1 @@
+/** GDPR */ export class GDPRCompliance { static check() { console.log('\n=== GDPR Compliance ==='); console.log('✅ Data minimization'); console.log('✅ Right to be forgotten'); console.log('✅ Data portability'); console.log('✅ Consent management'); console.log('✅ Data breach notification'); }} if (require.main === module) { GDPRCompliance.check(); }

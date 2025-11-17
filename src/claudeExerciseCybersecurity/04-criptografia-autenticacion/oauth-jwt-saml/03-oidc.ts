@@ -1,0 +1,1 @@
+/** OpenID Connect */ export class OIDCDemo { static demonstrate() { console.log('\n=== OpenID Connect ===\n'); console.log('OAuth 2.0 + Authentication'); console.log('Returns ID Token (JWT) + Access Token'); }} if (require.main === module) { OIDCDemo.demonstrate(); }
