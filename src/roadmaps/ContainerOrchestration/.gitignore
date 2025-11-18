@@ -1,0 +1,72 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.npm
+.yarn
+
+# TypeScript
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary
+tmp/
+temp/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Docker
+# Uncomment if you don't want to track these
+# Dockerfile
+# docker-compose.yml
+# .dockerignore
+
+# Kubernetes secrets (never commit!)
+*-secret.yaml
+secrets/
+*.key
+*.pem
+*.crt
+
+# Kubernetes generated
+kustomization.yaml
+base/generated/
+
+# Helm
+charts/*.tgz
+.helm/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+
+# Local development
+*.local.yaml
+dev-override.yaml

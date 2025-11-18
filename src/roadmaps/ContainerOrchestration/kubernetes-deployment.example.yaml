@@ -1,0 +1,424 @@
+# ============================================
+# Kubernetes Deployment Completo
+# Incluye: Deployment, Service, ConfigMap, Secret, Ingress, HPA
+# ============================================
+
+---
+# ============================================
+# ConfigMap - Configuración no sensible
+# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+  labels:
+    app: myapp
+data:
+  # Simple key-value
+  APP_NAME: "MyApp"
+  LOG_LEVEL: "info"
+  ENVIRONMENT: "production"
+
+  # File-like config
+  app-config.json: |
+    {
+      "features": {
+        "newUI": true,
+        "analytics": true
+      },
+      "limits": {
+        "maxUploadSize": "10MB",
+        "requestTimeout": 30
+      }
+    }
+
+---
+# ============================================
+# Secret - Datos sensibles (base64 encoded)
+# ============================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+  namespace: default
+  labels:
+    app: myapp
+type: Opaque
+stringData:
+  # stringData auto-encodes to base64
+  DATABASE_URL: "postgresql://user:password@postgres:5432/myapp"
+  REDIS_URL: "redis://redis:6379"
+  API_KEY: "super-secret-api-key-123"
+  JWT_SECRET: "jwt-secret-key-456"
+
+---
+# ============================================
+# Deployment - App principal
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  namespace: default
+  labels:
+    app: myapp
+    version: v1
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+
+  # Deployment strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Max pods above desired during update
+      maxUnavailable: 0  # Zero-downtime deployments
+
+  selector:
+    matchLabels:
+      app: myapp
+
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+
+    spec:
+      # Security
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+
+      # Containers
+      containers:
+      - name: app
+        image: myapp:1.0.0
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+
+        # Environment variables
+        env:
+        # From ConfigMap
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: APP_NAME
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL
+
+        # From Secret
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: REDIS_URL
+
+        # Direct
+        - name: PORT
+          value: "3000"
+        - name: NODE_ENV
+          value: "production"
+
+        # Volume mounts
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+
+        # Resource limits
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+        # Liveness probe (restart if unhealthy)
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # Readiness probe (remove from service if not ready)
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        # Lifecycle hooks
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+
+      # Volumes
+      volumes:
+      - name: config-volume
+        configMap:
+          name: app-config
+          items:
+          - key: app-config.json
+            path: config.json
+      - name: tmp
+        emptyDir: {}
+
+      # Tolerations and affinity (optional)
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - myapp
+              topologyKey: kubernetes.io/hostname
+
+---
+# ============================================
+# Service - Expose app internally
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+  namespace: default
+  labels:
+    app: myapp
+spec:
+  type: ClusterIP
+  selector:
+    app: myapp
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  sessionAffinity: None
+
+---
+# ============================================
+# Ingress - External access with routing
+# ============================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myapp-ingress
+  namespace: default
+  labels:
+    app: myapp
+  annotations:
+    # Nginx Ingress specific
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+
+    # Certificate manager (cert-manager)
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+
+  tls:
+  - hosts:
+    - myapp.example.com
+    secretName: myapp-tls
+
+  rules:
+  - host: myapp.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp-service
+            port:
+              name: http
+
+---
+# ============================================
+# HorizontalPodAutoscaler - Auto-scaling
+# ============================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: myapp-hpa
+  namespace: default
+  labels:
+    app: myapp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+
+  minReplicas: 3
+  maxReplicas: 10
+
+  metrics:
+  # CPU-based scaling
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+  # Memory-based scaling
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+      selectPolicy: Max
+
+---
+# ============================================
+# PodDisruptionBudget - Alta disponibilidad
+# ============================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: myapp-pdb
+  namespace: default
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: myapp
+
+---
+# ============================================
+# NetworkPolicy - Firewall rules (opcional)
+# ============================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: myapp-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: myapp
+  policyTypes:
+  - Ingress
+  - Egress
+
+  ingress:
+  # Allow from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 3000
+
+  egress:
+  # Allow to PostgreSQL
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+
+  # Allow to Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+
+# ============================================
+# Usage:
+# ============================================
+# Apply all:
+#   kubectl apply -f kubernetes-deployment.example.yaml
+#
+# View resources:
+#   kubectl get all -l app=myapp
+#
+# Describe deployment:
+#   kubectl describe deployment myapp
+#
+# View logs:
+#   kubectl logs -l app=myapp -f
+#
+# Scale manually:
+#   kubectl scale deployment myapp --replicas=5
+#
+# Delete all:
+#   kubectl delete -f kubernetes-deployment.example.yaml
+# ============================================

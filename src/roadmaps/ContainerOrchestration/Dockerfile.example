@@ -1,0 +1,97 @@
+# Multi-stage Dockerfile para aplicaciones TypeScript/Node.js
+# Optimizado para tamaño de imagen y performance
+
+# ============================================
+# Build Stage - Compilación de TypeScript
+# ============================================
+FROM node:18-alpine AS builder
+
+# Metadata
+LABEL stage=builder
+LABEL description="Build stage for TypeScript compilation"
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files primero (mejor layer caching)
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY src ./src
+
+# Build TypeScript
+RUN npm run build
+
+# Prune dev dependencies
+RUN npm prune --production
+
+# ============================================
+# Runtime Stage - Imagen final optimizada
+# ============================================
+FROM node:18-alpine
+
+# Metadata
+LABEL maintainer="your-email@example.com"
+LABEL version="1.0.0"
+LABEL description="Production-ready Node.js application"
+
+# Install dumb-init (proper signal handling)
+RUN apk add --no-cache dumb-init
+
+# Set working directory
+WORKDIR /app
+
+# Copy node_modules from builder
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Change ownership
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Environment variables
+ENV NODE_ENV=production \
+    PORT=3000
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start application
+CMD ["node", "dist/index.js"]
+
+# ============================================
+# Build Instructions:
+# ============================================
+# docker build -t myapp:1.0.0 .
+# docker run -p 3000:3000 myapp:1.0.0
+
+# ============================================
+# Size Optimization Tips:
+# ============================================
+# 1. Use alpine base image (5x smaller than debian)
+# 2. Multi-stage builds (separate build and runtime)
+# 3. npm ci instead of npm install (faster, deterministic)
+# 4. npm prune --production (remove devDependencies)
+# 5. .dockerignore to exclude unnecessary files
+# 6. Combine RUN commands to reduce layers
+# 7. Use specific tags (not :latest)
