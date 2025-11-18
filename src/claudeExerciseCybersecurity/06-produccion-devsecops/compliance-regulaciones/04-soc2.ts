@@ -1,0 +1,1 @@
+/** SOC 2 */ export class SOC2Compliance { static check() { console.log('\n=== SOC 2 ==='); console.log('Trust Service Criteria:'); console.log('  - Security'); console.log('  - Availability'); console.log('  - Processing Integrity'); console.log('  - Confidentiality'); console.log('  - Privacy'); }} if (require.main === module) { SOC2Compliance.check(); }

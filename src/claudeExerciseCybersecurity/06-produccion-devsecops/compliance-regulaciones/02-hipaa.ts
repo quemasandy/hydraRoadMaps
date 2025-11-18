@@ -1,0 +1,1 @@
+/** HIPAA */ export class HIPAACompliance { static check() { console.log('\n=== HIPAA Compliance ==='); console.log('Protected Health Information (PHI)'); console.log('✅ Encryption at rest and in transit'); console.log('✅ Access controls'); console.log('✅ Audit logging'); console.log('✅ Business Associate Agreements'); }} if (require.main === module) { HIPAACompliance.check(); }

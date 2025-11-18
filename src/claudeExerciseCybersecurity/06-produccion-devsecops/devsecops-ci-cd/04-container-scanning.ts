@@ -1,0 +1,1 @@
+/** Container Scanning */ export class ContainerScanner { static scan(image: string) { console.log('\n=== Container Image Scanning ==='); console.log(`Scanning: ${image}`); console.log('Tools: Trivy, Clair, Anchore'); console.log('Check for: CVEs, misconfigurations, secrets'); }} if (require.main === module) { ContainerScanner.scan('myapp:latest'); }

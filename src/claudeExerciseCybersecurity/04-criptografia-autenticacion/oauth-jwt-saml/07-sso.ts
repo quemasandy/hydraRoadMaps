@@ -1,0 +1,1 @@
+/** Single Sign-On */ export class SSODemo { static demonstrate() { console.log('\n=== SSO ===\n'); console.log('One login → Multiple applications'); console.log('Protocols: SAML, OAuth/OIDC, Kerberos'); }} if (require.main === module) { SSODemo.demonstrate(); }

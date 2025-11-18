@@ -1,0 +1,1 @@
+/** Recovery */ export class Recovery { static recover() { console.log('\n=== Recovery ==='); console.log('Restore normal operations'); console.log('  - Restore from clean backups'); console.log('  - Gradually bring systems online'); console.log('  - Monitor for reinfection'); console.log('  - Validate functionality'); }} if (require.main === module) { Recovery.recover(); }

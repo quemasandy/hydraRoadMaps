@@ -1,0 +1,1 @@
+/** OAuth Authorization Code */ export class OAuthDemo { static demonstrate() { console.log('\n=== OAuth 2.0 Authorization Code ===\n'); console.log('1. User → Authorization Server'); console.log('2. Get authorization code'); console.log('3. Exchange code for token'); }} if (require.main === module) { OAuthDemo.demonstrate(); }

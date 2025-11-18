@@ -1,0 +1,1 @@
+/** DAST in CI/CD */ export class DASTIntegration { static demonstrate() { console.log('\n=== DAST in CI/CD ==='); console.log('Post-deployment scanning'); console.log('Tools: OWASP ZAP, Burp Suite'); console.log('Test deployed application'); console.log('Detect runtime vulnerabilities'); }} if (require.main === module) { DASTIntegration.demonstrate(); }

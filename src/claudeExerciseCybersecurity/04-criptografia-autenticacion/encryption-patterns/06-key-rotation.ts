@@ -1,0 +1,1 @@
+/** Key Rotation */ export class KeyRotationDemo { static demonstrate() { console.log('\n=== Key Rotation ==='); console.log('Periodic key replacement'); console.log('Keep old keys for decryption'); console.log('Use new key for encryption'); console.log('Reduce blast radius of key compromise'); }} if (require.main === module) { KeyRotationDemo.demonstrate(); }

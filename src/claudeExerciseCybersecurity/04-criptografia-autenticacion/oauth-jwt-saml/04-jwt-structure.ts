@@ -1,0 +1,1 @@
+/** JWT Structure */ export class JWTDemo { static demonstrate() { console.log('\n=== JWT Structure ===\n'); console.log('header.payload.signature'); console.log('Header: { alg: "HS256", typ: "JWT" }'); console.log('Payload: { sub: "1234", exp: 1234567890 }'); }} if (require.main === module) { JWTDemo.demonstrate(); }

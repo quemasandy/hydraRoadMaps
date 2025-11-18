@@ -1,0 +1,1 @@
+/** SAML */ export class SAMLDemo { static demonstrate() { console.log('\n=== SAML ===\n'); console.log('XML-based authentication'); console.log('Identity Provider (IdP) → Service Provider (SP)'); console.log('SAML Assertion contains user identity'); }} if (require.main === module) { SAMLDemo.demonstrate(); }

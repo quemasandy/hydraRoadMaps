@@ -1,0 +1,1 @@
+/** Secure Random */ import { randomBytes } from 'crypto'; export class SecureRandomDemo { static demonstrate() { const token = randomBytes(32).toString('hex'); console.log('\n=== Secure Random ==='); console.log('Token:', token); console.log('\nUse crypto.randomBytes, not Math.random()'); }} if (require.main === module) { SecureRandomDemo.demonstrate(); }

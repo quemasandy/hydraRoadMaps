@@ -1,0 +1,1 @@
+/** ISO 27001 */ export class ISO27001Compliance { static check() { console.log('\n=== ISO 27001 ==='); console.log('Information Security Management System'); console.log('✅ Risk assessment'); console.log('✅ Security policies'); console.log('✅ Access control'); console.log('✅ Continuous improvement'); }} if (require.main === module) { ISO27001Compliance.check(); }
