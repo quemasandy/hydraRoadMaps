@@ -1,5 +1,3 @@
-
-
 class SytemLogger {
   constructor(public message: string) {}
 
@@ -10,25 +8,25 @@ class SytemLogger {
 
 class EmailAlert extends SytemLogger {
   send() {
-    this.log("EmailAlert");
+    this.log('EmailAlert');
     console.log(`Enviando email ${this.message}`);
   }
 }
 
 class SmsAlert extends SytemLogger {
   send() {
-    this.log("SmsAlert");
+    this.log('SmsAlert');
     console.log(`Enviando SMS ${this.message}`);
   }
 }
 
 class SlackAlert extends SytemLogger {
   send() {
-    this.log("SlackAlert");
+    this.log('SlackAlert');
     console.log(`Enviando mensaje a Slack ${this.message}`);
   }
 }
 
-new EmailAlert("Servidor caído").send();
-new SmsAlert("Alta temperatura detectada").send();
-new SlackAlert("Nuevo mensaje en canal general").send();
+new EmailAlert('Servidor caído').send();
+new SmsAlert('Alta temperatura detectada').send();
+new SlackAlert('Nuevo mensaje en canal general').send();
