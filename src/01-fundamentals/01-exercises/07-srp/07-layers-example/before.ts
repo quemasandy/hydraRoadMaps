@@ -68,3 +68,8 @@ const response = handler.handleRegisterUser({
   body: { email: "andy@example.com", password: "supersecretpassword" } 
 });
 console.log(response);
+
+// 1. Capa de Presentación/Controlador
+// 2. Capa de Servicio/Dominio
+// 3. Capa de Infraestructura/Repositorio
+// 4. Capa de Presentación/Controlador

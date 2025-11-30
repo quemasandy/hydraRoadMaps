@@ -31,7 +31,7 @@ export class UserService {
     // REGLA DE NEGOCIO 2: Encriptar contraseña
     const passwordHash = `encrypted_${passwordPlain}`;
 
-    // Delegamos el guardado a la capa de abajo (Datos)
+    // Delegamos el guardado a la capa lógica de abajo (Datos)
     // El servicio NO escribe SQL, le pide al experto (Repository) que lo haga.
     const newUser = this.userRepository.save(email, passwordHash);
 

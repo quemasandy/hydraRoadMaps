@@ -13,12 +13,15 @@ import { UserService } from './2-service';
 import { UserController } from './3-controller';
 
 // 1. Crear la capa de DATOS (no depende de nadie)
+// Agrupar código que tiene la misma responsabilidad
 const userRepository = new UserRepository();
 
 // 2. Crear la capa de NEGOCIO (necesita datos)
+// Agrupar código que tiene la misma responsabilidad
 const userService = new UserService(userRepository);
 
 // 3. Crear la capa de PRESENTACIÓN (necesita negocio)
+// Agrupar código que tiene la misma responsabilidad
 const userController = new UserController(userService);
 
 // --- SIMULACIÓN DE USO ---
