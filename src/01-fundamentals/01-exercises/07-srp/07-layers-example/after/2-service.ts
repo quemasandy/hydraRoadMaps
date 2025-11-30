@@ -26,6 +26,7 @@ export class UserService {
     // Esto NO es validación de formato (eso va en el controlador), es regla de negocio.
     if (email.endsWith('@evil.com')) {
       throw new Error("Regla de Negocio: No se permiten usuarios de evil.com");
+      // return new Error("Regla de Negocio: No se permiten usuarios de evil.com");
     }
 
     // REGLA DE NEGOCIO 2: Encriptar contraseña

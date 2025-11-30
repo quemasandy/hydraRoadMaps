@@ -40,6 +40,9 @@ export class UserController {
       // 2. DELEGACIÓN AL NEGOCIO
       // El controlador no sabe registrar usuarios, solo sabe a quién pedirle que lo haga.
       const user = this.userService.registerUser(email, password);
+      // if (user instanceof Error) {
+      //   return { status: 403, body: { error: user.message } };
+      // }
 
       // 3. RESPUESTA EXITOSA
       return {
