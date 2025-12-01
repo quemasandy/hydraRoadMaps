@@ -1,0 +1,12 @@
+/**
+ * Archivo: IEmailService.ts
+ * UBICACIÓN: Capa de Dominio / Interfaces (Puertos)
+ *
+ * Contrato para enviar correos electrónicos.
+ * El dominio no sabe si se usa SendGrid, AWS SES o SMTP local.
+ */
+
+export interface IEmailService {
+  sendWelcomeEmail(email: string, name: string): Promise<void>;
+  sendOrderConfirmation(email: string, orderId: string): Promise<void>;
+}
