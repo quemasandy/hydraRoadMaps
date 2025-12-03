@@ -13,7 +13,7 @@
  */
 
 import { UserService } from './service';
-import { InvalidEmailError, InvalidPasswordError } from './errors';
+import { InvalidEmailError, InvalidPasswordError, HttpErrorResponse } from './errors';
 
 // Tipos simulados de HTTP
 type HttpRequest = { body: any };
@@ -23,7 +23,7 @@ export class UserController {
   
   constructor(private userService: UserService) {}
 
-  handleRegister(req: HttpRequest): HttpResponse {
+  handleRegister(req: HttpRequest): HttpResponse | HttpErrorResponse {
     console.log("--- [Capa de Presentación] Recibiendo solicitud HTTP ---");
 
     try {
@@ -61,10 +61,7 @@ export class UserController {
       // 4. MANEJO DE ERRORES DE NEGOCIO
       // Si el servicio se queja (ej. dominio prohibido), traducimos eso a HTTP.
       console.log(`[Capa de Presentación] Error capturado: ${error.message}`);
-      return {
-        status: error.statusCode,
-        body: { error: error.message }
-      };
+      return error.toHttpError();
     }
   }
 }

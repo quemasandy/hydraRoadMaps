@@ -1,35 +1,53 @@
-export class InvalidEmailError extends Error {
+export interface HttpErrorResponse {
+  status: number;
+  body: {
+    success: false;
+    data: { error: string };
+  }
+}
+
+abstract class SystemError extends Error {
   statusCode: number;
+  constructor(args: {message: string, statusCode: number }) {
+    super(args.message);
+    this.name = "SystemError";
+    this.statusCode = args.statusCode;
+  }
+  toHttpError(): HttpErrorResponse {
+    return {
+      status: this.statusCode,
+      body: {
+        success: false,
+        data: { error: this.message }
+      }
+    };
+  }
+}
+
+export class InvalidEmailError extends SystemError {
   constructor() {
-    super("Invalid email format");
+    super({message: "Invalid email format", statusCode: 400});
     this.name = "InvalidEmailError";
-    this.statusCode = 400;
   }
 }
 
-export class InvalidPasswordError extends Error {
-  statusCode: number;
+export class InvalidPasswordError extends SystemError {
   constructor() {
-    super("Password must be at least 6 characters long");
+    super({message: "Password must be at least 6 characters long", statusCode: 400});
     this.name = "InvalidPasswordError";
-    this.statusCode = 400;
   }
 }
 
-export class InvalidEmailDomainError extends Error {
-  statusCode: number;
+export class InvalidEmailDomainError extends SystemError {
   constructor() {
-    super("Invalid email domain");
+    super({message: "Invalid email domain", statusCode: 400});
     this.name = "InvalidEmailDomainError";
-    this.statusCode = 400;
   }
 }
 
-export class CustomError extends Error {
-  statusCode: number;
-  constructor(message: string, statusCode: number) {
-    super(message);
+export class CustomError extends SystemError {
+  constructor(args: {message: string, statusCode: number}) {
+    super(args);
     this.name = "CustomError";
-    this.statusCode = statusCode;
   }
 }
