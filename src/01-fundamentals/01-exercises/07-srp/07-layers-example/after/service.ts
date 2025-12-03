@@ -12,7 +12,7 @@
  * SU ÚNICA RESPONSABILIDAD: Cumplir los requisitos del negocio.
  */
 
-import { InvalidEmailDomainError, CustomError } from './errors';
+import { InvalidEmailDomainError } from './errors';
 import { UserRepository, UserEntity } from './repository';
 
 export class UserService {
@@ -26,8 +26,8 @@ export class UserService {
     // REGLA DE NEGOCIO 1: Validar dominio prohibido
     // Esto NO es validación de formato (eso va en el controlador), es regla de negocio.
     if (email.endsWith('@evil.com')) {
-      // throw new InvalidEmailDomainError();
-      throw new CustomError("Regla de Negocio: No se permiten usuarios de evil.com", 402);
+      throw new InvalidEmailDomainError();
+      // throw new CustomError("Regla de Negocio: No se permiten usuarios de evil.com", 402);
       // return new Error("Regla de Negocio: No se permiten usuarios de evil.com");
     }
 
