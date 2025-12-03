@@ -12,7 +12,8 @@
  * SU ÚNICA RESPONSABILIDAD: Hablar el idioma del usuario (HTTP) y traducir al idioma del negocio.
  */
 
-import { UserService } from './2-service';
+import { UserService } from './service';
+import { InvalidEmailError, InvalidPasswordError } from './errors';
 
 // Tipos simulados de HTTP
 type HttpRequest = { body: any };
@@ -31,10 +32,10 @@ export class UserController {
       const { email, password } = req.body;
       
       if (!email || !email.includes('@')) {
-        return { status: 400, body: { error: "Bad Request: Email inválido" } };
+        throw new InvalidEmailError();
       }
       if (!password || password.length < 6) {
-        return { status: 400, body: { error: "Bad Request: Password muy corto" } };
+        throw new InvalidPasswordError();
       }
 
       // 2. DELEGACIÓN AL NEGOCIO
@@ -54,11 +55,12 @@ export class UserController {
       };
 
     } catch (error: any) {
+      console.log('...', error);
       // 4. MANEJO DE ERRORES DE NEGOCIO
       // Si el servicio se queja (ej. dominio prohibido), traducimos eso a HTTP.
       console.log(`[Capa de Presentación] Error capturado: ${error.message}`);
       return {
-        status: 403, // Forbidden
+        status: error.statusCode,
         body: { error: error.message }
       };
     }

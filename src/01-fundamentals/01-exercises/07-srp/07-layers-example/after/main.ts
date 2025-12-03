@@ -8,9 +8,9 @@
  * pero aquí lo hacemos manual para que veas cómo encajan las piezas.
  */
 
-import { UserRepository } from './1-repository';
-import { UserService } from './2-service';
-import { UserController } from './3-controller';
+import { UserRepository } from './repository';
+import { UserService } from './service';
+import { UserController } from './controller';
 
 // 1. Crear la capa de DATOS (no depende de nadie)
 // Agrupar código que tiene la misma responsabilidad
