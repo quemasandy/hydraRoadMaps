@@ -33,9 +33,11 @@ export class UserController {
       
       if (!email || !email.includes('@')) {
         throw new InvalidEmailError();
+        // return { status: 400, body: { error: "Bad Request: Email inválido" } };
       }
       if (!password || password.length < 6) {
         throw new InvalidPasswordError();
+        // return { status: 400, body: { error: "Bad Request: Password inválido" } };
       }
 
       // 2. DELEGACIÓN AL NEGOCIO
