@@ -61,6 +61,13 @@ export class UserController {
       // 4. MANEJO DE ERRORES DE NEGOCIO
       // Si el servicio se queja (ej. dominio prohibido), traducimos eso a HTTP.
       console.log(`[Capa de Presentación] Error capturado: ${error.message}`);
+      // return {
+      //   status: this.statusCode,
+      //   body: {
+      //     success: false,
+      //     data: { error: this.message }
+      //   }
+      // };
       return error.toHttpError();
     }
   }

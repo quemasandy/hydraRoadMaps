@@ -14,6 +14,7 @@ import { UserController } from './controller';
 
 // 1. Crear la capa de DATOS (no depende de nadie)
 // Agrupar código que tiene la misma responsabilidad
+// Mundo exterior no sabe de negocio
 const userRepository = new UserRepository();
 
 // 2. Crear la capa de NEGOCIO (necesita datos)

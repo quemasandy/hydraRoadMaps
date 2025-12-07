@@ -18,7 +18,6 @@ export interface UserEntity {
 }
 
 export class UserRepository {
-  // Simula guardar en una base de datos real
   save(email: string, passwordHash: string): UserEntity {
     console.log(`[Capa de Datos] Ejecutando SQL: INSERT INTO users (email, '${passwordHash}')...`);
     
