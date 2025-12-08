@@ -1,0 +1,1046 @@
+
+
+// ==========================================
+// File: README.md
+// ==========================================
+
+# Enhanced Layered Architecture (afterV2)
+
+This directory contains a comprehensive, didactic example of **Clean Architecture**.
+
+It demonstrates how to separate concerns into **Presentation**, **Domain**, and **Infrastructure** layers, with specific examples for payment gateways, queues, and databases.
+
+## Directory Structure
+
+The project is organized as follows:
+
+```
+afterV2/
+├── domain/                  # 🧠 The Brain (Pure Business Logic)
+│   ├── entities/            # User, Order
+│   ├── interfaces/          # Ports (IUserRepository, IPaymentGateway...)
+│   └── services/            # UserService, OrderService
+├── infrastructure/          # 🔌 The Plugs (External Tools)
+│   ├── repositories/        # MongoUserRepository, SqlUserRepository
+│   ├── email/               # SmtpEmailClient
+│   ├── payment/             # Cybersource, Lyra
+│   └── queue/               # AwsSqs, RabbitMq
+├── presentation/            # 🗣️ The Voice (IO)
+│   ├── controllers/         # UserController, OrderController
+│   ├── dtos/                # RegisterUserDto, CreateOrderDto
+│   ├── serializers/         # UserSerializer
+│   └── views/               # ConsoleView
+└── main.ts                  # 🏗️ The Builder (Composition Root)
+```
+
+## Key Concepts Demonstrated
+
+### 1. Dependency Inversion
+The **Domain** layer defines interfaces (Ports) like `IPaymentGateway`. The **Infrastructure** layer implements them (`CybersourcePaymentGateway`). The domain *never* imports from infrastructure.
+
+### 2. Dependency Injection
+In `main.ts`, we wire everything together. This allows us to swap implementations easily:
+
+```typescript
+// main.ts
+// Switching databases is as easy as changing one line!
+// const userRepo = new SqlUserRepository();
+const userRepo = new MongoUserRepository();
+
+// Switching payment providers
+const paymentGateway = new LyraPaymentGateway();
+```
+
+### 3. Rich Domain Model
+Entities like `User` and `Order` contain business logic (e.g., `markAsPaid()`, `deactivate()`), not just data.
+
+## How to Run
+
+You can run the example using `ts-node`:
+
+```bash
+npx ts-node src/01-fundamentals/01-exercises/07-srp/07-layers-example/afterV2/main.ts
+```
+
+### Expected Output
+You will see logs indicating the flow through the layers:
+1.  **Controller** receives request.
+2.  **Domain Service** executes logic.
+3.  **Infrastructure** performs external actions (SQL, Mongo, API calls).
+4.  **View** renders the result.
+
+
+// ==========================================
+// File: main.ts
+// ==========================================
+
+/**
+ * Archivo: main.ts
+ * UBICACIÓN: Raíz de la Aplicación (Composition Root)
+ *
+ * Aquí es donde ocurre la MAGIA de la Inyección de Dependencias.
+ * Decidimos QUÉ implementaciones usar sin tocar el código de negocio.
+ */
+
+// Importamos Interfaces (Puertos)
+import { IUserRepository } from './domain/interfaces/IUserRepository';
+import { IEmailService } from './domain/interfaces/IEmailService';
+import { IPaymentGateway } from './domain/interfaces/IPaymentGateway';
+import { IQueueService } from './domain/interfaces/IQueueService';
+
+// Importamos Implementaciones (Adaptadores)
+import { SqlUserRepository } from './infrastructure/repositories/SqlUserRepository';
+import { MongoUserRepository } from './infrastructure/repositories/MongoUserRepository';
+import { SmtpEmailClient } from './infrastructure/email/SmtpEmailClient';
+import { CybersourcePaymentGateway } from './infrastructure/payment/CybersourcePaymentGateway';
+import { LyraPaymentGateway } from './infrastructure/payment/LyraPaymentGateway';
+import { AwsSqsClient } from './infrastructure/queue/AwsSqsClient';
+import { RabbitMqClient } from './infrastructure/queue/RabbitMqClient';
+
+// Importamos Servicios de Dominio
+import { UserService } from './domain/services/UserService';
+import { OrderService } from './domain/services/OrderService';
+
+// Importamos Controladores y Vistas
+import { UserController } from './presentation/controllers/UserController';
+import { OrderController } from './presentation/controllers/OrderController';
+import { ConsoleView } from './presentation/views/ConsoleView';
+
+async function main() {
+  console.log("🚀 Iniciando Sistema con Arquitectura Limpia...\n");
+
+  // 1. CAPA DE INFRAESTRUCTURA (Elegimos las herramientas)
+  // Podemos cambiar estas líneas y TODO el sistema cambia de tecnología
+  // sin tocar una sola línea de lógica de negocio.
+  
+  // const userRepo: IUserRepository = new SqlUserRepository(); // Opción A
+  const userRepo: IUserRepository = new MongoUserRepository(); // Opción B
+
+  const emailService: IEmailService = new SmtpEmailClient();
+  
+  // const paymentGateway: IPaymentGateway = new CybersourcePaymentGateway(); // Opción A
+  const paymentGateway: IPaymentGateway = new LyraPaymentGateway(); // Opción B
+
+  const queueService: IQueueService = new AwsSqsClient();
+  // const queueService: IQueueService = new RabbitMqClient();
+
+  // 2. CAPA DE DOMINIO (Inyectamos las herramientas)
+  const userService = new UserService(userRepo, emailService);
+  const orderService = new OrderService(paymentGateway, queueService, emailService);
+
+  // 3. CAPA DE PRESENTACIÓN (Conectamos con el mundo exterior)
+  const view = new ConsoleView();
+  const userController = new UserController(userService, view);
+  const orderController = new OrderController(orderService, view);
+
+  // --- SIMULACIÓN DE USO ---
+
+  // CASO 1: Registrar Usuario
+  await userController.register({ 
+    email: "andy@gmail.com", 
+    password: "superSecurePassword" 
+  });
+
+  // CASO 2: Crear Orden
+  await orderController.createOrder({
+    userId: "user_123",
+    amount: 150.00,
+    paymentSource: "tok_visa_4242"
+  });
+
+  // CASO 3: Intento de registro fallido (Regla de Negocio)
+  await userController.register({ 
+    email: "hacker@evil.com", 
+    password: "123" 
+  });
+}
+
+main().catch(console.error);
+
+
+// ==========================================
+// File: infrastructure/payment/CybersourcePaymentGateway.ts
+// ==========================================
+
+/**
+ * Archivo: CybersourcePaymentGateway.ts
+ * UBICACIÓN: Capa de Infraestructura / Payment
+ *
+ * Implementación concreta para Cybersource.
+ */
+
+import { IPaymentGateway } from '../../domain/interfaces/IPaymentGateway';
+
+export class CybersourcePaymentGateway implements IPaymentGateway {
+  async processPayment(amount: number, currency: string, source: string): Promise<boolean> {
+    console.log(`[Infra - Cybersource] Iniciando transacción SOAP/REST...`);
+    console.log(`[Infra - Cybersource] Cobrando ${amount} ${currency} a tarjeta ${source}`);
+    return true; // Simula éxito
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/payment/LyraPaymentGateway.ts
+// ==========================================
+
+/**
+ * Archivo: LyraPaymentGateway.ts
+ * UBICACIÓN: Capa de Infraestructura / Payment
+ *
+ * Implementación concreta para Lyra.
+ */
+
+import { IPaymentGateway } from '../../domain/interfaces/IPaymentGateway';
+
+export class LyraPaymentGateway implements IPaymentGateway {
+  async processPayment(amount: number, currency: string, source: string): Promise<boolean> {
+    console.log(`[Infra - Lyra] Redirigiendo a pasarela de pago segura...`);
+    console.log(`[Infra - Lyra] Procesando pago de ${amount} ${currency}`);
+    return true; // Simula éxito
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/repositories/MongoUserRepository.ts
+// ==========================================
+
+import { IUserRepository } from '../../domain/interfaces/IUserRepository';
+import { User } from '../../domain/entities/User';
+import { UserDocument } from '../dtos/UserDocument';
+import { MongoUserMapper } from '../mappers/MongoUserMapper';
+
+export class MongoUserRepository implements IUserRepository {
+  
+  // Simulamos el Driver de MongoDB (como si fuera 'mongoose' o 'mongodb native driver')
+  private db = {
+    collection: (name: string) => ({
+      insertOne: async (doc: any): Promise<any> => {
+        console.log(`[Mongo Driver] db.${name}.insertOne(${JSON.stringify(doc)})`);
+        return { acknowledged: true, insertedId: doc._id };
+      },
+      findOne: async (query: any): Promise<any> => {
+        console.log(`[Mongo Driver] db.${name}.findOne(${JSON.stringify(query)})`);
+        
+        // SIMULACIÓN: Si buscamos por ID 123, devolvemos algo, si no null
+        if (query._id === 'user_123' || query['$or']) { // Hack simple para simulacion
+           return null; // Simulamos no encontrado por defecto para el ejemplo
+        }
+        return null;
+      }
+    })
+  };
+
+  async save(user: User): Promise<User> {
+    // 1. Dominio -> Documento BSON (DTO)
+    const userDoc = MongoUserMapper.toPersistence(user);
+
+    // 2. Persistencia (Infraestructura Pura)
+    // Mongo usa upsert o insertOne/updateOne. Aquí simulamos insert.
+    await this.db.collection('users').insertOne(userDoc);
+
+    return user;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    // 1. Consulta BSON
+    const doc = await this.db.collection('users').findOne({ email: email });
+
+    // 2. Si no hay documento, retornamos null
+    if (!doc) return null;
+
+    // 3. Reconstitución (BSON -> User Entity)
+    return MongoUserMapper.toDomain(doc as UserDocument);
+  }
+
+  async findById(id: string): Promise<User | null> {
+    // 1. Consulta BSON por _id
+    // Nota: en la vida real user._id puede ser ObjectId, aquí usamos string
+    console.log(`[Mongo Driver] db.users.findOne({ _id: '${id}' })`);
+
+    // SIMULACIÓN DE RETORNO DE DRIVER
+    const mockDoc: UserDocument = {
+      _id: id,
+      email: "found@mongo.com",
+      password_hash: "secret_hash_mongo",
+      is_active: true, // Boolean nativo
+      created_at: new Date()
+    };
+
+    // 2. Transformación
+    return MongoUserMapper.toDomain(mockDoc);
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/repositories/SqlUserRepository.ts
+// ==========================================
+
+import { IUserRepository } from '../../domain/interfaces/IUserRepository';
+import { User } from '../../domain/entities/User';
+import { UserPersistenceDTO } from '../dtos/UserPersistenceDTO';
+import { UserMapper } from '../mappers/UserMapper';
+
+export class SqlUserRepository implements IUserRepository {
+  
+  // Simulamos un "Pool de Conexiones" o Driver de Base de Datos
+  private db = {
+    query: async (sql: string, params: any[]): Promise<any[]> => {
+      console.log(`[DB Driver] Executing SQL: ${sql} | Params: ${JSON.stringify(params)}`);
+      // Esto retornaría datos 'raw' de la BD (JSON o filas)
+      return []; 
+    }
+  };
+
+  async save(user: User): Promise<User> {
+    // 1. Dominio -> Datos de Persistencia (DTO)
+    // El repositorio convierte la entidad limpia en datos sucios/planos
+    const persistenceData = UserMapper.toPersistence(user);
+
+    // 2. Ejecutar Query (Infraestructura Pura)
+    const sql = `
+      INSERT INTO users (id, email, password_hash, is_active, created_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+      email = VALUES(email), 
+      is_active = VALUES(is_active)
+    `;
+    
+    await this.db.query(sql, [
+      persistenceData.user_id,
+      persistenceData.email_address,
+      persistenceData.password_hash,
+      persistenceData.is_active,
+      persistenceData.created_at
+    ]);
+
+    return user;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    // 1. Query a la BD
+    const sql = "SELECT * FROM users WHERE email_address = ? LIMIT 1";
+    const rows = await this.db.query(sql, [email]);
+
+    // Simulamos que la BD no encontró nada
+    if (rows.length === 0) {
+      // Nota: Aquí podríamos devolver datos hardcodeados para probar si quieres
+      return null; 
+    }
+
+    // 2. Datos Crudos (DTO) -> Recibidos del driver
+    const rawUser: UserPersistenceDTO = rows[0];
+
+    // 3. Reconstitución (Infra -> Dominio)
+    // Usamos el Mapper para crear la entidad mágicamente
+    return UserMapper.toDomain(rawUser);
+  }
+
+  async findById(id: string): Promise<User | null> {
+    const sql = "SELECT * FROM users WHERE id = ? LIMIT 1";
+    // SIMULACIÓN: Vamos a fingir que la BD SÍ encontró al usuario para el ejemplo
+    console.log(`[DB Driver] Executing SQL: ${sql} | Params: ["${id}"]`);
+
+    // DATO CRUDO SIMULADO (Lo que devolvería el driver de MySQL/Postgres)
+    const mockDbRow: UserPersistenceDTO = {
+      user_id: id,
+      email_address: "found@sql.com",
+      password_hash: "hashed_secret_123",
+      is_active: 1, // ¡Fíjate! Es un número, no un boolean
+      created_at: "2023-01-01T10:00:00Z"
+    };
+
+    // Mapeo: DTO -> Entity
+    return UserMapper.toDomain(mockDbRow);
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/dtos/UserDocument.ts
+// ==========================================
+
+/**
+ * Archivo: UserDocument.ts
+ * UBICACIÓN: Capa de Infraestructura / DTOs
+ *
+ * ¿QUÉ ES UN DOCUMENTO DE MONGO?
+ * - Representa la estructura de los documentos en la colección 'users'.
+ * - MongoDB usa '_id' en lugar de 'id'.
+ * - Es flexible, pero en Typescript definimos una interfaz para seguridad.
+ */
+
+export interface UserDocument {
+  _id: string;           // Mongo SIEMPRE usa _id
+  email: string;
+  password_hash: string;
+  is_active: boolean;    // BSON soporta booleanos nativos
+  created_at: Date;      // BSON soporta Date nativos
+}
+
+
+// ==========================================
+// File: infrastructure/dtos/UserPersistenceDTO.ts
+// ==========================================
+
+/**
+ * Archivo: UserPersistenceDTO.ts
+ * UBICACIÓN: Capa de Infraestructura / DTOs
+ *
+ * ¿QUÉ ES UN DTO DE PERSISTENCIA?
+ * - Representa CÓMO están guardados los datos en la base de datos realmente.
+ * - Suele usar tipos primitivos (string, number, boolean) y nombres de columnas (snake_case).
+ * - NO tiene lógica de negocio. Es solo una bolsa de datos.
+ */
+
+export interface UserPersistenceDTO {
+  user_id: string;       // En DB suele ser 'id' o 'user_id' -> snake_case
+  email_address: string; // Imaginemos que la columna se llama 'email_address'
+  password_hash: string; // Columna 'password_hash'
+  is_active: number;     // En SQL a veces los booleanos son 0 o 1 (TINYINT)
+  created_at: string;    // Fecha como string ISO o timestamp
+}
+
+
+// ==========================================
+// File: infrastructure/queue/AwsSqsClient.ts
+// ==========================================
+
+/**
+ * Archivo: AwsSqsClient.ts
+ * UBICACIÓN: Capa de Infraestructura / Queue
+ *
+ * Implementación concreta para AWS SQS.
+ */
+
+import { IQueueService } from '../../domain/interfaces/IQueueService';
+
+export class AwsSqsClient implements IQueueService {
+  async publishMessage(queueName: string, message: any): Promise<void> {
+    console.log(`[Infra - AWS SQS] Enviando mensaje a https://sqs.us-east-1.amazonaws.com/123/${queueName}`);
+    console.log(`[Infra - AWS SQS] Body: ${JSON.stringify(message)}`);
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/queue/RabbitMqClient.ts
+// ==========================================
+
+/**
+ * Archivo: RabbitMqClient.ts
+ * UBICACIÓN: Capa de Infraestructura / Queue
+ *
+ * Implementación concreta para RabbitMQ (u otro cloud).
+ */
+
+import { IQueueService } from '../../domain/interfaces/IQueueService';
+
+export class RabbitMqClient implements IQueueService {
+  async publishMessage(queueName: string, message: any): Promise<void> {
+    console.log(`[Infra - RabbitMQ] Publicando en exchange 'events', routingKey '${queueName}'`);
+    console.log(`[Infra - RabbitMQ] Payload: ${JSON.stringify(message)}`);
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/mappers/MongoUserMapper.ts
+// ==========================================
+
+/**
+ * Archivo: MongoUserMapper.ts
+ * UBICACIÓN: Capa de Infraestructura / Mappers
+ *
+ * Mapeo específico para MongoDB.
+ * Maneja la idiosincrasia de Mongo (como el _id).
+ */
+
+import { User } from '../../domain/entities/User';
+import { UserDocument } from '../dtos/UserDocument';
+
+export class MongoUserMapper {
+  
+  /**
+   * BSON Document -> Domain Entity
+   */
+  static toDomain(doc: UserDocument): User {
+    return new User(
+      doc._id,           // Mapeamos _id -> id
+      doc.email,
+      doc.password_hash,
+      doc.is_active
+    );
+  }
+
+  /**
+   * Domain Entity -> BSON Document
+   */
+  static toPersistence(user: User): UserDocument {
+    return {
+      _id: user.id,      // Mapeamos id -> _id
+      email: user.email,
+      password_hash: user.passwordHash,
+      is_active: user.isActive,
+      created_at: new Date() // Ojo: En un sistema real, mantendrías la fecha de creación original if exists
+    };
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/mappers/UserMapper.ts
+// ==========================================
+
+/**
+ * Archivo: UserMapper.ts
+ * UBICACIÓN: Capa de Infraestructura / Mappers
+ *
+ * ¿QUÉ ES UN MAPPER?
+ * - Es el traductor entre el mundo de la Base de Datos (DTO) y el mundo del Dominio (Entidad).
+ * - Mantiene limpia la Entidad: ella no sabe que en la DB el campo se llama 'is_active'.
+ * - Mantiene limpia la DB: no le importa las reglas de negocio de la Entidad.
+ */
+
+import { User } from '../../domain/entities/User';
+import { UserPersistenceDTO } from '../dtos/UserPersistenceDTO';
+
+export class UserMapper {
+  
+  /**
+   * Convierte de DTO (Base de Datos) -> Entidad (Dominio)
+   * Aquí ocurre la "Reconstitución" mágica.
+   */
+  static toDomain(raw: UserPersistenceDTO): User {
+    // 1. Convertimos el 0/1 de SQL a boolean real
+    const isActiveBoolean = raw.is_active === 1;
+
+    // 2. Creamos la entidad
+    return new User(
+      raw.user_id,
+      raw.email_address,
+      raw.password_hash,
+      isActiveBoolean
+    );
+  }
+
+  /**
+   * Convierte de Entidad (Dominio) -> DTO (Base de Datos)
+   * Prepara los datos para ser guardados.
+   */
+  static toPersistence(user: User): UserPersistenceDTO {
+    return {
+      user_id: user.id,
+      email_address: user.email,
+      password_hash: user.passwordHash,
+      is_active: user.isActive ? 1 : 0, // Convertimos boolean a TINYINT
+      created_at: new Date().toISOString() // Dato de auditoría (ejemplo)
+    };
+  }
+}
+
+
+// ==========================================
+// File: infrastructure/email/SmtpEmailClient.ts
+// ==========================================
+
+/**
+ * Archivo: SmtpEmailClient.ts
+ * UBICACIÓN: Capa de Infraestructura / Email
+ *
+ * Implementación concreta usando SMTP.
+ */
+
+import { IEmailService } from '../../domain/interfaces/IEmailService';
+
+export class SmtpEmailClient implements IEmailService {
+  async sendWelcomeEmail(email: string, name: string): Promise<void> {
+    console.log(`[Infra - Email] Conectando a servidor SMTP... Enviando 'Bienvenida' a ${email}`);
+  }
+
+  async sendOrderConfirmation(email: string, orderId: string): Promise<void> {
+    console.log(`[Infra - Email] Conectando a servidor SMTP... Enviando 'Confirmación Orden ${orderId}' a ${email}`);
+  }
+}
+
+
+// ==========================================
+// File: domain/services/OrderService.ts
+// ==========================================
+
+/**
+ * Archivo: OrderService.ts
+ * UBICACIÓN: Capa de Dominio / Servicios
+ *
+ * Servicio para gestionar órdenes de compra.
+ * Orquesta pagos, colas y notificaciones.
+ */
+
+import { Order } from '../entities/Order';
+import { IPaymentGateway } from '../interfaces/IPaymentGateway';
+import { IQueueService } from '../interfaces/IQueueService';
+import { IEmailService } from '../interfaces/IEmailService';
+
+export class OrderService {
+  constructor(
+    private readonly paymentGateway: IPaymentGateway,
+    private readonly queueService: IQueueService,
+    private readonly emailService: IEmailService
+  ) {}
+
+  async createOrder(userId: string, amount: number, paymentSource: string): Promise<Order> {
+    console.log(`[Dominio] Creando orden para usuario ${userId} por $${amount}...`);
+
+    // 1. Crear la orden en estado PENDING
+    let order = new Order(Date.now().toString(), userId, amount);
+
+    try {
+      // 2. Procesar pago (usando el puerto de pago)
+      const paymentSuccess = await this.paymentGateway.processPayment(amount, 'USD', paymentSource);
+
+      if (paymentSuccess) {
+        // 3. Si el pago es exitoso, marcar como pagada
+        order = order.markAsPaid();
+        
+        // 4. Publicar evento en la cola (para logística, analítica, etc.)
+        await this.queueService.publishMessage('orders_queue', {
+          orderId: order.id,
+          status: 'PAID',
+          amount: amount
+        });
+
+        // 5. Enviar confirmación por email
+        await this.emailService.sendOrderConfirmation("user@example.com", order.id); // Email hardcodeado para el ejemplo
+        
+        console.log(`[Dominio] Orden ${order.id} procesada exitosamente.`);
+      } else {
+        // Pago rechazado
+        order = order.markAsFailed();
+        console.warn(`[Dominio] Pago rechazado para orden ${order.id}.`);
+      }
+
+    } catch (error) {
+      console.error(`[Dominio] Error procesando orden: ${error}`);
+      order = order.markAsFailed();
+    }
+
+    return order;
+  }
+}
+
+
+// ==========================================
+// File: domain/services/UserService.ts
+// ==========================================
+
+/**
+ * Archivo: UserService.ts
+ * UBICACIÓN: Capa de Dominio / Servicios
+ *
+ * ¿QUÉ HACE UN SERVICIO DE DOMINIO?
+ * - Orquesta la lógica de negocio pura.
+ * - Utiliza los puertos (interfaces) para interactuar con el mundo exterior.
+ * - Implementa los casos de uso (ej. Registrar Usuario).
+ */
+
+import { User } from '../entities/User';
+import { IUserRepository } from '../interfaces/IUserRepository';
+import { IEmailService } from '../interfaces/IEmailService';
+
+export class UserService {
+  // Inyección de dependencias a través del constructor
+  // Dependemos de abstracciones (Interfaces), NO de implementaciones concretas.
+  constructor(
+    private readonly userRepository: IUserRepository,
+    private readonly emailService: IEmailService
+  ) {}
+
+  async registerUser(email: string, passwordPlain: string): Promise<User> {
+    console.log(`[Dominio] Iniciando registro para ${email}...`);
+
+    // 1. REGLA DE NEGOCIO: Verificar si el usuario ya existe
+    const existingUser = await this.userRepository.findByEmail(email);
+    if (existingUser) {
+      throw new Error("El usuario ya está registrado.");
+    }
+
+    // 2. REGLA DE NEGOCIO: Validar dominio prohibido (ejemplo didáctico)
+    if (email.endsWith('@evil.com')) {
+      throw new Error("Regla de Negocio: No se permiten usuarios de evil.com");
+    }
+
+    // 3. Crear la entidad (aquí iría lógica de hasheo real, simplificado para el ejemplo)
+    const passwordHash = `hashed_${passwordPlain}`;
+    const newUser = new User(
+      Date.now().toString(), // ID temporal
+      email,
+      passwordHash
+    );
+
+    // 4. Persistir usando el puerto
+    const savedUser = await this.userRepository.save(newUser);
+
+    // 5. Efecto secundario: Enviar email de bienvenida
+    await this.emailService.sendWelcomeEmail(savedUser.email, "Nuevo Usuario");
+
+    console.log(`[Dominio] Usuario registrado exitosamente: ${savedUser.id}`);
+    return savedUser;
+  }
+}
+
+
+// ==========================================
+// File: domain/entities/Order.ts
+// ==========================================
+
+/**
+ * Archivo: Order.ts
+ * UBICACIÓN: Capa de Dominio / Entidades
+ *
+ * Representa una orden de compra en el sistema.
+ */
+
+export class Order {
+  constructor(
+    public readonly id: string,
+    public readonly userId: string,
+    public readonly amount: number,
+    public readonly status: 'PENDING' | 'PAID' | 'FAILED' = 'PENDING',
+    public readonly createdAt: Date = new Date()
+  ) {}
+
+  /**
+   * REGLA DE NEGOCIO:
+   * Marcar la orden como pagada.
+   */
+  markAsPaid(): Order {
+    if (this.status === 'PAID') {
+      throw new Error("La orden ya está pagada.");
+    }
+    return new Order(this.id, this.userId, this.amount, 'PAID', this.createdAt);
+  }
+
+  /**
+   * REGLA DE NEGOCIO:
+   * Marcar la orden como fallida.
+   */
+  markAsFailed(): Order {
+    return new Order(this.id, this.userId, this.amount, 'FAILED', this.createdAt);
+  }
+}
+
+
+// ==========================================
+// File: domain/entities/User.ts
+// ==========================================
+
+/**
+ * Archivo: User.ts
+ * UBICACIÓN: Capa de Dominio / Entidades
+ *
+ * ¿QUÉ ES UNA ENTIDAD?
+ * - Es un objeto de negocio con identidad única (ID).
+ * - Contiene datos y comportamiento puro del negocio.
+ * - NO depende de base de datos, frameworks ni UI.
+ */
+
+export class User {
+  // Propiedades privadas para encapsulamiento
+  constructor(
+    public readonly id: string,
+    public readonly email: string,
+    public readonly passwordHash: string,
+    public readonly isActive: boolean = true
+  ) {}
+
+  /**
+   * REGLA DE NEGOCIO:
+   * Un usuario puede desactivarse, pero solo si está activo.
+   */
+  deactivate(): User {
+    // por qué esta validación es importante ?
+    if (!this.isActive) {
+      throw new Error("El usuario ya está inactivo.");
+    }
+    // Retornamos una nueva instancia para inmutabilidad (opcional pero recomendado)
+    return new User(this.id, this.email, this.passwordHash, false);
+  }
+
+  /**
+   * REGLA DE NEGOCIO:
+   * Validación de dominio simple.
+   */
+  hasValidEmail(): boolean {
+    return this.email.includes('@');
+  }
+}
+
+
+// ==========================================
+// File: domain/interfaces/IEmailService.ts
+// ==========================================
+
+/**
+ * Archivo: IEmailService.ts
+ * UBICACIÓN: Capa de Dominio / Interfaces (Puertos)
+ *
+ * Contrato para enviar correos electrónicos.
+ * El dominio no sabe si se usa SendGrid, AWS SES o SMTP local.
+ */
+
+export interface IEmailService {
+  sendWelcomeEmail(email: string, name: string): Promise<void>;
+  sendOrderConfirmation(email: string, orderId: string): Promise<void>;
+}
+
+
+// ==========================================
+// File: domain/interfaces/IPaymentGateway.ts
+// ==========================================
+
+/**
+ * Archivo: IPaymentGateway.ts
+ * UBICACIÓN: Capa de Dominio / Interfaces (Puertos)
+ *
+ * Contrato para procesar pagos.
+ * El dominio no sabe si se usa Stripe, PayPal, Cybersource o Lyra.
+ */
+
+export interface IPaymentGateway {
+  processPayment(amount: number, currency: string, source: string): Promise<boolean>;
+}
+
+
+// ==========================================
+// File: domain/interfaces/IQueueService.ts
+// ==========================================
+
+/**
+ * Archivo: IQueueService.ts
+ * UBICACIÓN: Capa de Dominio / Interfaces (Puertos)
+ *
+ * Contrato para enviar mensajes a colas.
+ * El dominio no sabe si se usa AWS SQS, RabbitMQ o Kafka.
+ */
+
+export interface IQueueService {
+  publishMessage(queueName: string, message: any): Promise<void>;
+}
+
+
+// ==========================================
+// File: domain/interfaces/IUserRepository.ts
+// ==========================================
+
+/**
+ * Archivo: IUserRepository.ts
+ * UBICACIÓN: Capa de Dominio / Interfaces (Puertos)
+ *
+ * ¿QUÉ ES UN PUERTO (PORT)?
+ * - Es un contrato que define QUÉ necesita el dominio para funcionar.
+ * - NO dice CÓMO se hace (eso es problema de la infraestructura).
+ * - Permite desacoplar el dominio de la base de datos.
+ */
+
+import { User } from '../entities/User';
+
+export interface IUserRepository {
+  save(user: User): Promise<User>;
+  findByEmail(email: string): Promise<User | null>;
+  findById(id: string): Promise<User | null>;
+}
+
+
+// ==========================================
+// File: presentation/dtos/CreateOrderDto.ts
+// ==========================================
+
+/**
+ * Archivo: CreateOrderDto.ts
+ * UBICACIÓN: Capa de Presentación / DTOs
+ *
+ * Estructura de datos para crear una orden.
+ */
+
+export interface CreateOrderDto {
+  userId: string;
+  amount: number;
+  paymentSource: string; // Token de tarjeta, ID de cuenta, etc.
+}
+
+
+// ==========================================
+// File: presentation/dtos/RegisterUserDto.ts
+// ==========================================
+
+/**
+ * Archivo: RegisterUserDto.ts
+ * UBICACIÓN: Capa de Presentación / DTOs
+ *
+ * ¿QUÉ ES UN DTO (Data Transfer Object)?
+ * - Es un objeto simple para transportar datos entre procesos.
+ * - Define QUÉ datos esperamos recibir del cliente (frontend/API).
+ * - NO tiene lógica de negocio.
+ */
+
+export interface RegisterUserDto {
+  email: string;
+  password: string;
+}
+
+
+// ==========================================
+// File: presentation/serializers/UserSerializer.ts
+// ==========================================
+
+/**
+ * Archivo: UserSerializer.ts
+ * UBICACIÓN: Capa de Presentación / Serializers
+ *
+ * ¿QUÉ HACE UN SERIALIZER?
+ * - Transforma objetos de dominio en respuestas para el cliente.
+ * - Oculta datos sensibles (como passwordHash).
+ * - Formatea fechas, monedas, etc.
+ */
+
+import { User } from '../../domain/entities/User';
+
+export class UserSerializer {
+  static serialize(user: User): any {
+    return {
+      id: user.id,
+      email: user.email,
+      status: user.isActive ? 'Active' : 'Inactive',
+      // NO devolvemos passwordHash
+    };
+  }
+}
+
+
+// ==========================================
+// File: presentation/controllers/OrderController.ts
+// ==========================================
+
+/**
+ * Archivo: OrderController.ts
+ * UBICACIÓN: Capa de Presentación / Controladores
+ *
+ * Controlador para gestionar órdenes.
+ */
+
+import { OrderService } from '../../domain/services/OrderService';
+import { CreateOrderDto } from '../dtos/CreateOrderDto';
+import { ConsoleView } from '../views/ConsoleView';
+
+export class OrderController {
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly view: ConsoleView
+  ) {}
+
+  async createOrder(request: CreateOrderDto): Promise<void> {
+    console.log("\n--- [Controller] Recibiendo solicitud de orden ---");
+
+    try {
+      // 1. Validación
+      if (request.amount <= 0) {
+        throw new Error("Bad Request: El monto debe ser positivo");
+      }
+
+      // 2. Delegación
+      const order = await this.orderService.createOrder(
+        request.userId, 
+        request.amount, 
+        request.paymentSource
+      );
+
+      // 3. Respuesta
+      this.view.renderSuccess(order);
+
+    } catch (error: any) {
+      this.view.renderError(error.message);
+    }
+  }
+}
+
+
+// ==========================================
+// File: presentation/controllers/UserController.ts
+// ==========================================
+
+/**
+ * Archivo: UserController.ts
+ * UBICACIÓN: Capa de Presentación / Controladores
+ *
+ * ¿QUÉ HACE UN CONTROLADOR?
+ * - Recibe la petición (Request).
+ * - Valida el formato de entrada (DTOs).
+ * - Llama al Servicio de Dominio adecuado.
+ * - Formatea la respuesta (Serializer).
+ * - Retorna la respuesta (Response).
+ */
+
+import { UserService } from '../../domain/services/UserService';
+import { RegisterUserDto } from '../dtos/RegisterUserDto';
+import { UserSerializer } from '../serializers/UserSerializer';
+import { ConsoleView } from '../views/ConsoleView';
+
+export class UserController {
+  constructor(
+    private readonly userService: UserService,
+    private readonly view: ConsoleView
+  ) {}
+
+  async register(request: RegisterUserDto): Promise<void> {
+    console.log("\n--- [Controller] Recibiendo solicitud de registro ---");
+
+    try {
+      // 1. Validación básica de entrada (Input Validation)
+      if (!request.email || !request.email.includes('@')) {
+        throw new Error("Bad Request: Email inválido");
+      }
+      if (!request.password || request.password.length < 6) {
+        throw new Error("Bad Request: Password muy corto");
+      }
+
+      // 2. Delegación al Servicio de Dominio
+      const user = await this.userService.registerUser(request.email, request.password);
+
+      // 3. Serialización y Respuesta
+      const response = UserSerializer.serialize(user);
+      this.view.renderSuccess(response);
+
+    } catch (error: any) {
+      // 4. Manejo de Errores
+      this.view.renderError(error.message);
+    }
+  }
+}
+
+
+// ==========================================
+// File: presentation/views/ConsoleView.ts
+// ==========================================
+
+/**
+ * Archivo: ConsoleView.ts
+ * UBICACIÓN: Capa de Presentación / Vistas
+ *
+ * Simula una "Vista" que renderiza la respuesta.
+ * En una API REST, esto sería el JSON response.
+ * En una web MVC, sería el HTML.
+ */
+
+export class ConsoleView {
+  renderSuccess(data: any): void {
+    console.log("\n✅ [VISTA] Respuesta Exitosa:");
+    console.log(JSON.stringify(data, null, 2));
+  }
+
+  renderError(error: string): void {
+    console.log("\n❌ [VISTA] Error:");
+    console.log(`   ${error}`);
+  }
+}
