@@ -16,6 +16,8 @@ afterV2/
 │   └── services/            # UserService, OrderService
 ├── infrastructure/          # 🔌 The Plugs (External Tools)
 │   ├── repositories/        # MongoUserRepository, SqlUserRepository
+│   ├── dtos/                # UserPersistenceDTO, UserDocument
+│   ├── mappers/             # UserMapper, MongoUserMapper
 │   ├── email/               # SmtpEmailClient
 │   ├── payment/             # Cybersource, Lyra
 │   └── queue/               # AwsSqs, RabbitMq
