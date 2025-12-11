@@ -8,11 +8,13 @@
  * - NO depende de base de datos, frameworks ni UI.
  */
 
+import { Email } from '../value-objects/Email';
+
 export class User {
   // Propiedades privadas para encapsulamiento
   constructor(
     public readonly id: string,
-    public readonly email: string,
+    public readonly email: Email, // Value Object!
     public readonly passwordHash: string,
     public readonly isActive: boolean = true
   ) {}
@@ -32,8 +34,9 @@ export class User {
   /**
    * REGLA DE NEGOCIO:
    * Validación de dominio simple.
+   * (Ahora esto es redundante porque el VO Email ya se valida a sí mismo, pero lo mantenemos por compatibilidad o lógica extra)
    */
   hasValidEmail(): boolean {
-    return this.email.includes('@');
+    return this.email.getValue().includes('@');
   }
 }

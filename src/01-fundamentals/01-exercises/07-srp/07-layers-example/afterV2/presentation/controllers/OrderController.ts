@@ -19,15 +19,15 @@ export class OrderController {
     console.log("\n--- [Controller] Recibiendo solicitud de orden ---");
 
     try {
-      // 1. Validación
-      if (request.amount <= 0) {
-        throw new Error("Bad Request: El monto debe ser positivo");
+      // 1. Validación (Ahora validamos la lista de items)
+      if (!request.items || !Array.isArray(request.items) || request.items.length === 0) {
+        throw new Error("Bad Request: La orden debe tener items.");
       }
 
       // 2. Delegación
       const order = await this.orderService.createOrder(
         request.userId, 
-        request.amount, 
+        request.items, 
         request.paymentSource
       );
 

@@ -7,6 +7,10 @@
 
 export interface CreateOrderDto {
   userId: string;
-  amount: number;
+  items: Array<{
+    productId: string;
+    price: number;
+    quantity: number;
+  }>;
   paymentSource: string; // Token de tarjeta, ID de cuenta, etc.
 }

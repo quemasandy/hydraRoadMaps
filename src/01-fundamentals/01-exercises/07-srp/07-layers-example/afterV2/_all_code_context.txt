@@ -21,6 +21,8 @@ afterV2/
 │   └── services/            # UserService, OrderService
 ├── infrastructure/          # 🔌 The Plugs (External Tools)
 │   ├── repositories/        # MongoUserRepository, SqlUserRepository
+│   ├── dtos/                # UserPersistenceDTO, UserDocument
+│   ├── mappers/             # UserMapper, MongoUserMapper
 │   ├── email/               # SmtpEmailClient
 │   ├── payment/             # Cybersource, Lyra
 │   └── queue/               # AwsSqs, RabbitMq
@@ -76,16 +78,68 @@ FILE: domain/entities/Order.ts
  * UBICACIÓN: Capa de Dominio / Entidades
  *
  * Representa una orden de compra en el sistema.
+ * AHORA ES UN AGGREGATE ROOT (Raíz de Agregado).
  */
 
+import { Money } from '../value-objects/Money';
+
+// Value Object interno del Agregado
+export class OrderItem {
+  constructor(
+    public readonly productId: string,
+    public readonly price: Money, // VO!
+    public readonly quantity: number
+  ) {
+    if (quantity <= 0) throw new Error("La cantidad debe ser mayor a 0.");
+    // El precio negativo se valida dentro del VO Money, pero aquí validamos cantidad.
+  }
+
+  get total(): Money {
+    return this.price.multiply(this.quantity);
+  }
+}
+
 export class Order {
+  private _items: OrderItem[] = [];
+
   constructor(
     public readonly id: string,
     public readonly userId: string,
-    public readonly amount: number,
     public readonly status: 'PENDING' | 'PAID' | 'FAILED' = 'PENDING',
     public readonly createdAt: Date = new Date()
   ) {}
+
+  /**
+   * REGLA DE NEGOCIO (Aggregate Invariant):
+   * Agregar un item a la orden.
+   */
+  addItem(productId: string, price: Money, quantity: number): void {
+    if (this.status !== 'PENDING') {
+      throw new Error("No se pueden agregar items a una orden cerrada.");
+    }
+    this._items.push(new OrderItem(productId, price, quantity));
+  }
+
+  /**
+   * Propiedad calculada: El total de la orden es la suma de sus items.
+   */
+  get totalAmount(): Money {
+    // Si no hay items, retornamos 0 USD por defecto.
+    if (this._items.length === 0) {
+      return new Money(0, 'USD'); 
+    }
+    
+    // Asumimos que todos los items tienen la misma moneda para este ejemplo simple.
+    // Una implementación real manejaría conversión de monedas o validaría que todos sean la misma.
+    const currency = this._items[0].price.currency;
+    const initial = new Money(0, currency);
+
+    return this._items.reduce((sum, item) => sum.add(item.total), initial);
+  }
+
+  get items(): ReadonlyArray<OrderItem> {
+    return this._items;
+  }
 
   /**
    * REGLA DE NEGOCIO:
@@ -95,7 +149,11 @@ export class Order {
     if (this.status === 'PAID') {
       throw new Error("La orden ya está pagada.");
     }
-    return new Order(this.id, this.userId, this.amount, 'PAID', this.createdAt);
+    // En un enfoque inmutable puro devolveríamos una nueva instancia con los mismos items
+    // Para simplificar este ejemplo, mutamos el estado interno o recreamos copiando items
+    const paidOrder = new Order(this.id, this.userId, 'PAID', this.createdAt);
+    paidOrder._items = [...this._items]; // Copiamos los items
+    return paidOrder;
   }
 
   /**
@@ -103,7 +161,9 @@ export class Order {
    * Marcar la orden como fallida.
    */
   markAsFailed(): Order {
-    return new Order(this.id, this.userId, this.amount, 'FAILED', this.createdAt);
+    const failedOrder = new Order(this.id, this.userId, 'FAILED', this.createdAt);
+    failedOrder._items = [...this._items];
+    return failedOrder;
   }
 }
 
@@ -120,11 +180,13 @@ FILE: domain/entities/User.ts
  * - NO depende de base de datos, frameworks ni UI.
  */
 
+import { Email } from '../value-objects/Email';
+
 export class User {
   // Propiedades privadas para encapsulamiento
   constructor(
     public readonly id: string,
-    public readonly email: string,
+    public readonly email: Email, // Value Object!
     public readonly passwordHash: string,
     public readonly isActive: boolean = true
   ) {}
@@ -144,9 +206,10 @@ export class User {
   /**
    * REGLA DE NEGOCIO:
    * Validación de dominio simple.
+   * (Ahora esto es redundante porque el VO Email ya se valida a sí mismo, pero lo mantenemos por compatibilidad o lógica extra)
    */
   hasValidEmail(): boolean {
-    return this.email.includes('@');
+    return this.email.getValue().includes('@');
   }
 }
 
@@ -232,6 +295,7 @@ import { Order } from '../entities/Order';
 import { IPaymentGateway } from '../interfaces/IPaymentGateway';
 import { IQueueService } from '../interfaces/IQueueService';
 import { IEmailService } from '../interfaces/IEmailService';
+import { Money } from '../value-objects/Money';
 
 export class OrderService {
   constructor(
@@ -240,31 +304,48 @@ export class OrderService {
     private readonly emailService: IEmailService
   ) {}
 
-  async createOrder(userId: string, amount: number, paymentSource: string): Promise<Order> {
-    console.log(`[Dominio] Creando orden para usuario ${userId} por $${amount}...`);
+  async createOrder(userId: string, items: Array<{productId: string, price: number, quantity: number}>, paymentSource: string): Promise<Order> {
+    console.log(`[Dominio] Creando orden para usuario ${userId} con ${items.length} items...`);
 
-    // 1. Crear la orden en estado PENDING
-    let order = new Order(Date.now().toString(), userId, amount);
+    // 1. Crear la orden en estado PENDING (El agregado nace vacío)
+    let order = new Order(Date.now().toString(), userId);
+
+    // 2. Hidratar el agregado (Aquí se validan invariantes de cada item)
+    for (const item of items) {
+      // Creamos Value Object Money aquí
+      const priceVO = new Money(item.price, 'USD'); // Asumimos USD para simplificar
+      order.addItem(item.productId, priceVO, item.quantity);
+    }
+    
+    // Invariante del Agregado: ¿Orden vacía?
+    if (order.totalAmount.amount <= 0) { // Accedemos al valor primitivo para chequear
+      throw new Error("La orden debe tener al menos un item con valor.");
+    }
+
+    const totalAmount = order.totalAmount;
 
     try {
-      // 2. Procesar pago (usando el puerto de pago)
-      const paymentSuccess = await this.paymentGateway.processPayment(amount, 'USD', paymentSource);
+      // 3. Procesar pago (usando el puerto de pago)
+      // Nota: El dominio le pide al agregado "dame tu total" para cobrar. 
+      // El puerto espera primitivos (number), así que desempaquetamos el VO.
+      const paymentSuccess = await this.paymentGateway.processPayment(totalAmount.amount, totalAmount.currency, paymentSource);
 
       if (paymentSuccess) {
-        // 3. Si el pago es exitoso, marcar como pagada
+        // 4. Si el pago es exitoso, marcar como pagada (Mutación de estado del agregado)
         order = order.markAsPaid();
         
-        // 4. Publicar evento en la cola (para logística, analítica, etc.)
+        // 5. Publicar evento de integración (Side Effect)
         await this.queueService.publishMessage('orders_queue', {
+          type: 'ORDER_PAID',
           orderId: order.id,
-          status: 'PAID',
-          amount: amount
+          amount: totalAmount.amount,
+          currency: totalAmount.currency
         });
 
-        // 5. Enviar confirmación por email
-        await this.emailService.sendOrderConfirmation("user@example.com", order.id); // Email hardcodeado para el ejemplo
+        // 6. Enviar confirmación por email
+        await this.emailService.sendOrderConfirmation("user@example.com", order.id); 
         
-        console.log(`[Dominio] Orden ${order.id} procesada exitosamente.`);
+        console.log(`[Dominio] Orden ${order.id} procesada exitosamente. Total: ${totalAmount.toString()}`);
       } else {
         // Pago rechazado
         order = order.markAsFailed();
@@ -296,6 +377,7 @@ FILE: domain/services/UserService.ts
 import { User } from '../entities/User';
 import { IUserRepository } from '../interfaces/IUserRepository';
 import { IEmailService } from '../interfaces/IEmailService';
+import { Email } from '../value-objects/Email';
 
 export class UserService {
   // Inyección de dependencias a través del constructor
@@ -308,22 +390,24 @@ export class UserService {
   async registerUser(email: string, passwordPlain: string): Promise<User> {
     console.log(`[Dominio] Iniciando registro para ${email}...`);
 
+    const emailVO = new Email(email); // Invariantes se validan aquí
+
     // 1. REGLA DE NEGOCIO: Verificar si el usuario ya existe
-    const existingUser = await this.userRepository.findByEmail(email);
+    const existingUser = await this.userRepository.findByEmail(emailVO.getValue());
     if (existingUser) {
       throw new Error("El usuario ya está registrado.");
     }
 
     // 2. REGLA DE NEGOCIO: Validar dominio prohibido (ejemplo didáctico)
-    if (email.endsWith('@evil.com')) {
+    if (emailVO.getValue().endsWith('@evil.com')) {
       throw new Error("Regla de Negocio: No se permiten usuarios de evil.com");
     }
 
-    // 3. Crear la entidad (aquí iría lógica de hasheo real, simplificado para el ejemplo)
+    // 3. Crear la entidad
     const passwordHash = `hashed_${passwordPlain}`;
     const newUser = new User(
       Date.now().toString(), // ID temporal
-      email,
+      emailVO,
       passwordHash
     );
 
@@ -331,10 +415,90 @@ export class UserService {
     const savedUser = await this.userRepository.save(newUser);
 
     // 5. Efecto secundario: Enviar email de bienvenida
-    await this.emailService.sendWelcomeEmail(savedUser.email, "Nuevo Usuario");
+    await this.emailService.sendWelcomeEmail(savedUser.email.getValue(), "Nuevo Usuario");
 
     console.log(`[Dominio] Usuario registrado exitosamente: ${savedUser.id}`);
     return savedUser;
+  }
+}
+
+================================================================================
+FILE: domain/value-objects/Email.ts
+================================================================================
+/**
+ * Archivo: Email.ts
+ * UBICACIÓN: Capa de Dominio / Value Objects
+ *
+ * ¿QUÉ ES UN VALUE OBJECT?
+ * - Se define por su valor, no por su identidad.
+ * - Es inmutable.
+ * - Se valida a sí mismo al nacer.
+ */
+export class Email {
+  private readonly value: string;
+
+  constructor(value: string) {
+    if (!value) {
+      throw new Error("El email no puede estar vacío.");
+    }
+    if (!value.includes('@')) {
+      throw new Error("El email debe contener un '@'.");
+    }
+    // Más validaciones aquí (regex, etc.)
+    this.value = value.trim().toLowerCase();
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+
+  equals(other: Email): boolean {
+    return this.value === other.value;
+  }
+
+  toString(): string {
+    return this.value;
+  }
+}
+
+================================================================================
+FILE: domain/value-objects/Money.ts
+================================================================================
+/**
+ * Archivo: Money.ts
+ * UBICACIÓN: Capa de Dominio / Value Objects
+ */
+export class Money {
+  constructor(
+    public readonly amount: number,
+    public readonly currency: string = 'USD'
+  ) {
+    if (amount < 0) {
+      throw new Error("El monto no puede ser negativo.");
+    }
+    // Validación simple de moneda
+    if (currency.length !== 3) {
+      throw new Error("La moneda debe tener 3 caracteres (ISO 4217).");
+    }
+  }
+
+  add(other: Money): Money {
+    if (this.currency !== other.currency) {
+      throw new Error("No se pueden sumar monedas diferentes.");
+    }
+    return new Money(this.amount + other.amount, this.currency);
+  }
+
+  multiply(factor: number): Money {
+    return new Money(this.amount * factor, this.currency);
+  }
+
+  equals(other: Money): boolean {
+    return this.amount === other.amount && this.currency === other.currency;
+  }
+
+  toString(): string {
+    return `${this.amount.toFixed(2)} ${this.currency}`;
   }
 }
 
@@ -415,6 +579,7 @@ FILE: infrastructure/mappers/MongoUserMapper.ts
 
 import { User } from '../../domain/entities/User';
 import { UserDocument } from '../dtos/UserDocument';
+import { Email } from '../../domain/value-objects/Email';
 
 export class MongoUserMapper {
   
@@ -424,7 +589,7 @@ export class MongoUserMapper {
   static toDomain(doc: UserDocument): User {
     return new User(
       doc._id,           // Mapeamos _id -> id
-      doc.email,
+      new Email(doc.email), // Reconstituir VO
       doc.password_hash,
       doc.is_active
     );
@@ -436,7 +601,7 @@ export class MongoUserMapper {
   static toPersistence(user: User): UserDocument {
     return {
       _id: user.id,      // Mapeamos id -> _id
-      email: user.email,
+      email: user.email.getValue(),
       password_hash: user.passwordHash,
       is_active: user.isActive,
       created_at: new Date() // Ojo: En un sistema real, mantendrías la fecha de creación original if exists
@@ -459,21 +624,25 @@ FILE: infrastructure/mappers/UserMapper.ts
 
 import { User } from '../../domain/entities/User';
 import { UserPersistenceDTO } from '../dtos/UserPersistenceDTO';
+import { Email } from '../../domain/value-objects/Email';
 
 export class UserMapper {
   
   /**
    * Convierte de DTO (Base de Datos) -> Entidad (Dominio)
-   * Aquí ocurre la "Reconstitución" mágica.
    */
   static toDomain(raw: UserPersistenceDTO): User {
     // 1. Convertimos el 0/1 de SQL a boolean real
     const isActiveBoolean = raw.is_active === 1;
 
+    // 1. Reconstruimos Value Objects
+    // OJO: Aquí confiamos en la BD, o podríamos try/catch si la BD está corrupta
+    const emailVO = new Email(raw.email_address);
+
     // 2. Creamos la entidad
     return new User(
       raw.user_id,
-      raw.email_address,
+      emailVO, // Pasamos el VO
       raw.password_hash,
       isActiveBoolean
     );
@@ -486,7 +655,7 @@ export class UserMapper {
   static toPersistence(user: User): UserPersistenceDTO {
     return {
       user_id: user.id,
-      email_address: user.email,
+      email_address: user.email.getValue(), // Extraemos el valor primitivo
       password_hash: user.passwordHash,
       is_active: user.isActive ? 1 : 0, // Convertimos boolean a TINYINT
       created_at: new Date().toISOString() // Dato de auditoría (ejemplo)
@@ -794,10 +963,13 @@ async function main() {
     password: "superSecurePassword" 
   });
 
-  // CASO 2: Crear Orden
+  // CASO 2: Crear Orden con Items (Ejemplo de Agregado)
   await orderController.createOrder({
     userId: "user_123",
-    amount: 150.00,
+    items: [
+      { productId: "p1", price: 50.00, quantity: 1 },
+      { productId: "p2", price: 100.00, quantity: 1 } // Total should be 150.00
+    ],
     paymentSource: "tok_visa_4242"
   });
 
@@ -834,15 +1006,15 @@ export class OrderController {
     console.log("\n--- [Controller] Recibiendo solicitud de orden ---");
 
     try {
-      // 1. Validación
-      if (request.amount <= 0) {
-        throw new Error("Bad Request: El monto debe ser positivo");
+      // 1. Validación (Ahora validamos la lista de items)
+      if (!request.items || !Array.isArray(request.items) || request.items.length === 0) {
+        throw new Error("Bad Request: La orden debe tener items.");
       }
 
       // 2. Delegación
       const order = await this.orderService.createOrder(
         request.userId, 
-        request.amount, 
+        request.items, 
         request.paymentSource
       );
 
@@ -919,7 +1091,11 @@ FILE: presentation/dtos/CreateOrderDto.ts
 
 export interface CreateOrderDto {
   userId: string;
-  amount: number;
+  items: Array<{
+    productId: string;
+    price: number;
+    quantity: number;
+  }>;
   paymentSource: string; // Token de tarjeta, ID de cuenta, etc.
 }
 

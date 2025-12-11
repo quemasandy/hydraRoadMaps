@@ -65,10 +65,13 @@ async function main() {
     password: "superSecurePassword" 
   });
 
-  // CASO 2: Crear Orden
+  // CASO 2: Crear Orden con Items (Ejemplo de Agregado)
   await orderController.createOrder({
     userId: "user_123",
-    amount: 150.00,
+    items: [
+      { productId: "p1", price: 50.00, quantity: 1 },
+      { productId: "p2", price: 100.00, quantity: 1 } // Total should be 150.00
+    ],
     paymentSource: "tok_visa_4242"
   });
 

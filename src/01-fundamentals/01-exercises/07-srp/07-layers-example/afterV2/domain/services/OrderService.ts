@@ -10,6 +10,7 @@ import { Order } from '../entities/Order';
 import { IPaymentGateway } from '../interfaces/IPaymentGateway';
 import { IQueueService } from '../interfaces/IQueueService';
 import { IEmailService } from '../interfaces/IEmailService';
+import { Money } from '../value-objects/Money';
 
 export class OrderService {
   constructor(
@@ -18,31 +19,48 @@ export class OrderService {
     private readonly emailService: IEmailService
   ) {}
 
-  async createOrder(userId: string, amount: number, paymentSource: string): Promise<Order> {
-    console.log(`[Dominio] Creando orden para usuario ${userId} por $${amount}...`);
+  async createOrder(userId: string, items: Array<{productId: string, price: number, quantity: number}>, paymentSource: string): Promise<Order> {
+    console.log(`[Dominio] Creando orden para usuario ${userId} con ${items.length} items...`);
 
-    // 1. Crear la orden en estado PENDING
-    let order = new Order(Date.now().toString(), userId, amount);
+    // 1. Crear la orden en estado PENDING (El agregado nace vacío)
+    let order = new Order(Date.now().toString(), userId);
+
+    // 2. Hidratar el agregado (Aquí se validan invariantes de cada item)
+    for (const item of items) {
+      // Creamos Value Object Money aquí
+      const priceVO = new Money(item.price, 'USD'); // Asumimos USD para simplificar
+      order.addItem(item.productId, priceVO, item.quantity);
+    }
+    
+    // Invariante del Agregado: ¿Orden vacía?
+    if (order.totalAmount.amount <= 0) { // Accedemos al valor primitivo para chequear
+      throw new Error("La orden debe tener al menos un item con valor.");
+    }
+
+    const totalAmount = order.totalAmount;
 
     try {
-      // 2. Procesar pago (usando el puerto de pago)
-      const paymentSuccess = await this.paymentGateway.processPayment(amount, 'USD', paymentSource);
+      // 3. Procesar pago (usando el puerto de pago)
+      // Nota: El dominio le pide al agregado "dame tu total" para cobrar. 
+      // El puerto espera primitivos (number), así que desempaquetamos el VO.
+      const paymentSuccess = await this.paymentGateway.processPayment(totalAmount.amount, totalAmount.currency, paymentSource);
 
       if (paymentSuccess) {
-        // 3. Si el pago es exitoso, marcar como pagada
+        // 4. Si el pago es exitoso, marcar como pagada (Mutación de estado del agregado)
         order = order.markAsPaid();
         
-        // 4. Publicar evento en la cola (para logística, analítica, etc.)
+        // 5. Publicar evento de integración (Side Effect)
         await this.queueService.publishMessage('orders_queue', {
+          type: 'ORDER_PAID',
           orderId: order.id,
-          status: 'PAID',
-          amount: amount
+          amount: totalAmount.amount,
+          currency: totalAmount.currency
         });
 
-        // 5. Enviar confirmación por email
-        await this.emailService.sendOrderConfirmation("user@example.com", order.id); // Email hardcodeado para el ejemplo
+        // 6. Enviar confirmación por email
+        await this.emailService.sendOrderConfirmation("user@example.com", order.id); 
         
-        console.log(`[Dominio] Orden ${order.id} procesada exitosamente.`);
+        console.log(`[Dominio] Orden ${order.id} procesada exitosamente. Total: ${totalAmount.toString()}`);
       } else {
         // Pago rechazado
         order = order.markAsFailed();
