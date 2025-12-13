@@ -6,6 +6,10 @@
  * - Orquesta la lógica de negocio pura.
  * - Utiliza los puertos (interfaces) para interactuar con el mundo exterior.
  * - Implementa los casos de uso (ej. Registrar Usuario).
+ *
+ * - Para quién trabaja: La Capa de Presentación (Controladores) o Aplicación.
+ * - Intención: Orquestar el proceso de gestión de usuarios.
+ * - Misión: Coordinar repositorios y servicios externos para registrar y administrar usuarios.
  */
 
 import { User } from '../entities/User';

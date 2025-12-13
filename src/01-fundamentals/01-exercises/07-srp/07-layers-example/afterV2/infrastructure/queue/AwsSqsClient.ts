@@ -3,6 +3,10 @@
  * UBICACIÓN: Capa de Infraestructura / Queue
  *
  * Implementación concreta para AWS SQS.
+ *
+ * - Para quién trabaja: Servicios de Dominio (IQueueService).
+ * - Intención: Publicar mensajes en colas SQS.
+ * - Misión: Enviar eventos de dominio a la nube de AWS.
  */
 
 import { IQueueService } from '../../domain/interfaces/IQueueService';

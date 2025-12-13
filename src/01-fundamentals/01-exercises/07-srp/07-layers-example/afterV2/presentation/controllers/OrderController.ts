@@ -3,6 +3,10 @@
  * UBICACIÓN: Capa de Presentación / Controladores
  *
  * Controlador para gestionar órdenes.
+ *
+ * - Para quién trabaja: Cliente HTTP / API Consumer.
+ * - Intención: Exponer la funcionalidad de órdenes a través de una API.
+ * - Misión: Validar requests, invocar OrderService y devolver respuestas formateadas.
  */
 
 import { OrderService } from '../../domain/services/OrderService';

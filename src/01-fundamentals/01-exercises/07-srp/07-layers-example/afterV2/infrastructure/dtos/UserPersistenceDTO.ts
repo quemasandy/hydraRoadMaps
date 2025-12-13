@@ -6,6 +6,10 @@
  * - Representa CÓMO están guardados los datos en la base de datos realmente.
  * - Suele usar tipos primitivos (string, number, boolean) y nombres de columnas (snake_case).
  * - NO tiene lógica de negocio. Es solo una bolsa de datos.
+ *
+ * - Para quién trabaja: SqlUserRepository y UserMapper.
+ * - Intención: Definir la fila de base de datos SQL.
+ * - Misión: Representar fielmente el esquema de la tabla 'users'.
  */
 
 export interface UserPersistenceDTO {

@@ -4,6 +4,10 @@
  *
  * Contrato para enviar correos electrónicos.
  * El dominio no sabe si se usa SendGrid, AWS SES o SMTP local.
+ *
+ * - Para quién trabaja: Servicios de Dominio (UserService, OrderService).
+ * - Intención: Abstraer el envío de emails.
+ * - Misión: Definir cómo el dominio solicita el envío de notificaciones.
  */
 
 export interface IEmailService {

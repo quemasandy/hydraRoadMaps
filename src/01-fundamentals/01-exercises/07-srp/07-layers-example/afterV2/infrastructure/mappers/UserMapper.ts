@@ -6,6 +6,10 @@
  * - Es el traductor entre el mundo de la Base de Datos (DTO) y el mundo del Dominio (Entidad).
  * - Mantiene limpia la Entidad: ella no sabe que en la DB el campo se llama 'is_active'.
  * - Mantiene limpia la DB: no le importa las reglas de negocio de la Entidad.
+ *
+ * - Para quién trabaja: SqlUserRepository (Infraestructura).
+ * - Intención: Adaptar el modelo de dominio al esquema relacional de SQL.
+ * - Misión: Mapear Entidades a filas de tablas, manejando discrepancias de tipos (bool vs 1/0).
  */
 
 import { User } from '../../domain/entities/User';

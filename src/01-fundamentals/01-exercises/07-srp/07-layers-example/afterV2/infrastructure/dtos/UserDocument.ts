@@ -6,6 +6,10 @@
  * - Representa la estructura de los documentos en la colección 'users'.
  * - MongoDB usa '_id' en lugar de 'id'.
  * - Es flexible, pero en Typescript definimos una interfaz para seguridad.
+ *
+ * - Para quién trabaja: MongoUserRepository y MongoUserMapper.
+ * - Intención: Definir la forma de los datos en MongoDB.
+ * - Misión: Tipar fuertemente la estructura de los documentos BSON.
  */
 
 export interface UserDocument {

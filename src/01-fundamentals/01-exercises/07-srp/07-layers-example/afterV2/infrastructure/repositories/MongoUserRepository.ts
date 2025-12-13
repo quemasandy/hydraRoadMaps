@@ -1,3 +1,11 @@
+/**
+ * Archivo: MongoUserRepository.ts
+ * UBICACIÓN: Capa de Infraestructura / Repositories
+ *
+ * - Para quién trabaja: Dominio (IUserRepository).
+ * - Intención: Persistir usuarios en MongoDB.
+ * - Misión: Mapear entidades a BSON y ejecutar operaciones en la colección 'users'.
+ */
 import { IUserRepository } from '../../domain/interfaces/IUserRepository';
 import { User } from '../../domain/entities/User';
 import { UserDocument } from '../dtos/UserDocument';

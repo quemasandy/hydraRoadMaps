@@ -4,6 +4,10 @@
  *
  * Representa una orden de compra en el sistema.
  * AHORA ES UN AGGREGATE ROOT (Raíz de Agregado).
+ *
+ * - Para quién trabaja: La lógica de negocio (Dominio).
+ * - Intención: Representar una orden de compra.
+ * - Misión: Gestionar los items, costos y el estado de una transacción.
  */
 
 import { Money } from '../value-objects/Money';

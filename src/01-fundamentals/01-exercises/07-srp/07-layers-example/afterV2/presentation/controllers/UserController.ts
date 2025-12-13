@@ -8,6 +8,10 @@
  * - Llama al Servicio de Dominio adecuado.
  * - Formatea la respuesta (Serializer).
  * - Retorna la respuesta (Response).
+ *
+ * - Para quién trabaja: Cliente HTTP / API Consumer.
+ * - Intención: Exponer el registro de usuarios.
+ * - Misión: Manejar el ciclo de vida de la petición de registro, validando DTOs y formateando la salida.
  */
 
 import { UserService } from '../../domain/services/UserService';

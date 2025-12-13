@@ -6,6 +6,10 @@
  * - Transforma objetos de dominio en respuestas para el cliente.
  * - Oculta datos sensibles (como passwordHash).
  * - Formatea fechas, monedas, etc.
+ *
+ * - Para quién trabaja: Controladores (Presentación).
+ * - Intención: Adaptar el modelo de dominio a un formato de transporte seguro.
+ * - Misión: Convertir Entities a JSON/DTOs sin exponer datos sensibles.
  */
 
 import { User } from '../../domain/entities/User';

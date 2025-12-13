@@ -6,6 +6,10 @@
  * - Es un objeto de negocio con identidad única (ID).
  * - Contiene datos y comportamiento puro del negocio.
  * - NO depende de base de datos, frameworks ni UI.
+ *
+ * - Para quién trabaja: La lógica de negocio (Dominio).
+ * - Intención: Representar a un usuario en el sistema con sus reglas de validación.
+ * - Misión: Encapsular el estado y comportamiento de un usuario, asegurando su integridad.
  */
 
 import { Email } from '../value-objects/Email';

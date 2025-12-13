@@ -4,6 +4,10 @@
  *
  * Aquí es donde ocurre la MAGIA de la Inyección de Dependencias.
  * Decidimos QUÉ implementaciones usar sin tocar el código de negocio.
+ *
+ * - Para quién trabaja: El equipo de Desarrollo / DevOps.
+ * - Intención: Componer el grafo de dependencias de la aplicación.
+ * - Misión: Inicializar e inyectar las dependencias correctas para el entorno actual.
  */
 
 // Importamos Interfaces (Puertos)

@@ -3,6 +3,10 @@
  * UBICACIÓN: Capa de Infraestructura / Email
  *
  * Implementación concreta usando SMTP.
+ *
+ * - Para quién trabaja: Servicios de Dominio (IEmailService).
+ * - Intención: Enviar correos reales mediante SMTP.
+ * - Misión: Conectar con el servidor de correo y despachar el mensaje.
  */
 
 import { IEmailService } from '../../domain/interfaces/IEmailService';

@@ -6,6 +6,10 @@
  * - Se define por su valor, no por su identidad.
  * - Es inmutable.
  * - Se valida a sí mismo al nacer.
+ *
+ * - Para quién trabaja: Entidades y Servicios de Dominio.
+ * - Intención: Modelar y validar una dirección de correo electrónico.
+ * - Misión: Asegurar que cualquier email usado en el dominio sea sintácticamente válido.
  */
 export class Email {
   private readonly value: string;

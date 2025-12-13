@@ -4,6 +4,10 @@
  *
  * Servicio para gestionar órdenes de compra.
  * Orquesta pagos, colas y notificaciones.
+ *
+ * - Para quién trabaja: La Capa de Presentación (Controladores).
+ * - Intención: Gestionar el flujo de creación y procesamiento de órdenes.
+ * - Misión: Validar stock, procesar pagos y persistir órdenes.
  */
 
 import { Order } from '../entities/Order';

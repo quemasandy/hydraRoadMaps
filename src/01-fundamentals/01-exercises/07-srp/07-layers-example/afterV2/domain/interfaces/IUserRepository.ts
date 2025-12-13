@@ -6,6 +6,10 @@
  * - Es un contrato que define QUÉ necesita el dominio para funcionar.
  * - NO dice CÓMO se hace (eso es problema de la infraestructura).
  * - Permite desacoplar el dominio de la base de datos.
+ *
+ * - Para quién trabaja: Servicios de Dominio (UserService).
+ * - Intención: Abstraer la persistencia de usuarios.
+ * - Misión: Definir las operaciones necesarias para guardar y recuperar usuarios.
  */
 
 import { User } from '../entities/User';

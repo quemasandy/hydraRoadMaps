@@ -1,3 +1,11 @@
+/**
+ * Archivo: SqlUserRepository.ts
+ * UBICACIÓN: Capa de Infraestructura / Repositories
+ *
+ * - Para quién trabaja: Dominio (IUserRepository).
+ * - Intención: Persistir usuarios en base de datos Relacional (SQL).
+ * - Misión: Mapear entidades a registros en tablas y ejecutar sentencias SQL.
+ */
 import { IUserRepository } from '../../domain/interfaces/IUserRepository';
 import { User } from '../../domain/entities/User';
 import { UserPersistenceDTO } from '../dtos/UserPersistenceDTO';

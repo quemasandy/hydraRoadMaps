@@ -1,6 +1,10 @@
 /**
  * Archivo: Money.ts
  * UBICACIÓN: Capa de Dominio / Value Objects
+ *
+ * - Para quién trabaja: Entidades y Servicios de Dominio.
+ * - Intención: Manejar operaciones monetarias de forma segura.
+ * - Misión: Prevenir errores de redondeo y divisa en cálculos financieros.
  */
 export class Money {
   constructor(

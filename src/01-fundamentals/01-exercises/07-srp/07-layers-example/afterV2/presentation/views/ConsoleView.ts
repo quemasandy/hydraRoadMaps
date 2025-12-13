@@ -5,6 +5,10 @@
  * Simula una "Vista" que renderiza la respuesta.
  * En una API REST, esto sería el JSON response.
  * En una web MVC, sería el HTML.
+ *
+ * - Para quién trabaja: El Usuario Final.
+ * - Intención: Mostrar la información de respuesta de forma legible.
+ * - Misión: Renderizar los resultados de las operaciones en la consola (Standard Output).
  */
 
 export class ConsoleView {

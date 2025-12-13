@@ -3,6 +3,10 @@
  * UBICACIÓN: Capa de Infraestructura / Payment
  *
  * Implementación concreta para Cybersource.
+ *
+ * - Para quién trabaja: Servicio de Órdenes (IPaymentGateway).
+ * - Intención: Procesar pagos con Cybersource.
+ * - Misión: Integrarse con la API de Cybersource para autorizar transacciones.
  */
 
 import { IPaymentGateway } from '../../domain/interfaces/IPaymentGateway';

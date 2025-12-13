@@ -4,6 +4,10 @@
  *
  * Mapeo específico para MongoDB.
  * Maneja la idiosincrasia de Mongo (como el _id).
+ *
+ * - Para quién trabaja: MongoUserRepository (Infraestructura).
+ * - Intención: Adaptar el modelo de dominio al esquema de documentos de MongoDB.
+ * - Misión: Convertir Entidades a Documentos BSON y viceversa.
  */
 
 import { User } from '../../domain/entities/User';

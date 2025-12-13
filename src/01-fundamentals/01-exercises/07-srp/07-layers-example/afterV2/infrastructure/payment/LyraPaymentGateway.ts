@@ -3,6 +3,10 @@
  * UBICACIÓN: Capa de Infraestructura / Payment
  *
  * Implementación concreta para Lyra.
+ *
+ * - Para quién trabaja: Servicio de Órdenes (IPaymentGateway).
+ * - Intención: Procesar pagos con Lyra.
+ * - Misión: Redirigir o conectar con Lyra para cobros seguros.
  */
 
 import { IPaymentGateway } from '../../domain/interfaces/IPaymentGateway';
