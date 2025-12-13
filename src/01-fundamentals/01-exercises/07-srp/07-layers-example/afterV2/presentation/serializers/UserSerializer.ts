@@ -16,6 +16,7 @@ import { User } from '../../domain/entities/User';
 
 export class UserSerializer {
   static serialize(user: User): any {
+    console.log('[UserSerializer][serialize][user]', user.id);
     return {
       id: user.id,
       email: user.email,

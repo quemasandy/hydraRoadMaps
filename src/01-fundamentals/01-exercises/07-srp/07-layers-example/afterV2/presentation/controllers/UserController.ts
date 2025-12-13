@@ -30,6 +30,7 @@ export class UserController {
 
     try {
       // 1. Validación básica de entrada (Input Validation)
+      console.log("[UserController][register] Validando entrada...");
       if (!request.email || !request.email.includes('@')) {
         throw new Error("Bad Request: Email inválido");
       }
@@ -38,6 +39,7 @@ export class UserController {
       }
 
       // 2. Delegación al Servicio de Dominio
+      console.log("[UserController][register] Delegando al Servicio de Dominio...")
       const user = await this.userService.registerUser(request.email, request.password);
 
       // 3. Serialización y Respuesta

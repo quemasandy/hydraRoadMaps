@@ -43,6 +43,8 @@ export class UserService {
 
     // 3. Crear la entidad
     const passwordHash = `hashed_${passwordPlain}`;
+    // Instanciamos primero para asegurar que solo lo que es Válido y Consistente tenga el privilegio de tocar la persistencia.
+    // Es nuestro filtro de seguridad definitivo.
     const newUser = new User(
       Date.now().toString(), // ID temporal
       emailVO,

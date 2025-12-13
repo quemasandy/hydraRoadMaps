@@ -27,6 +27,17 @@ export class MongoUserRepository implements IUserRepository {
         if (query._id === 'user_123' || query['$or']) { // Hack simple para simulacion
            return null; // Simulamos no encontrado por defecto para el ejemplo
         }
+        
+        if (query.email === 'andyexist@gmail.com') {
+          return {
+            _id: 'user_123',
+            email: 'andyExist@gmail.com',
+            password_hash: 'secret_hash',
+            is_active: true,
+            created_at: '2025-12-13T18:14:09.000Z'
+          };
+        } 
+
         return null;
       }
     })

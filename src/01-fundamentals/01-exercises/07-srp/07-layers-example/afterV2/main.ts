@@ -64,8 +64,10 @@ async function main() {
   // --- SIMULACIÓN DE USO ---
 
   // CASO 1: Registrar Usuario
+  console.log("Llamo [userController.register]");
   await userController.register({ 
     email: "andy@gmail.com", 
+    // email: "andy@evil.com", 
     password: "superSecurePassword" 
   });
 
