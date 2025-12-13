@@ -34,7 +34,8 @@ export class MongoUserRepository implements IUserRepository {
             email: 'andyExist@gmail.com',
             password_hash: 'secret_hash',
             is_active: true,
-            created_at: '2025-12-13T18:14:09.000Z'
+            created_at: '2025-12-13T18:14:09.000Z',
+            version: 1
           };
         } 
 
@@ -52,6 +53,45 @@ export class MongoUserRepository implements IUserRepository {
     await this.db.collection('users').insertOne(userDoc);
 
     return user;
+  }
+
+  async update(user: User): Promise<void> {
+    const userDoc = MongoUserMapper.toPersistence(user);
+    
+    // OPTIMISTIC LOCKING:
+    // "Actualiza SOLO SI el id coincide Y la versión es la que yo leí al principio"
+    // Además, incrementamos la versión en 1 automatícamente al guardar.
+    // En Mongo esto es atómico.
+    
+    // Simulamos la operación atómica:
+    // db.users.updateOne({ _id: ..., version: ... }, { $set: { ..., version: version + 1 } })
+    
+    console.log(`[Mongo Driver] db.collections('users').updateOne({ _id: '${user.id}', version: ${user.version} }, { $set: ... })`);
+
+    // LÓGICA DE SIMULACIÓN (Ya que no hay BD real)
+    // Para la demo, vamos a simular que si el mail es "conflict@optimistic.com", fallamos.
+    // O mejor, dependemos de lo que tengamos en memoria o una bandera en el demo.
+    // Pero para ser fiel al repositorio, aquí debería "intentar" y si falla tirar error.
+    
+    // Simularemos éxito por defecto:
+    const simulatedMatchedCount = 1; // Si fuera 0, significaría que la versión cambió.
+    
+    // PERO, para probar el fallo, necesitamos que el demo pueda inyectar comportamiento o fallar.
+    // Como esto es un ejercicio, voy a lanzar un error si la versión que me pasan es antigua.
+    // ... pero ¿contra qué comparo? No tengo estado persistente real aquí más que mock.
+    
+    // TRUCO DIDÁCTICO:
+    // Vamos a asumir que en la "Base de Datos" (simulada aquí) la versión siempre avanza.
+    // Si el usuario me pasa version 1, y yo (simulación) digo que la actual es 2, fallo.
+    
+    // Vamos a usar una propiedad estática para simular el estado global de la BD para este ejemplo
+    if ((MongoUserRepository as any)._SIMULATED_DB_VERSION && (MongoUserRepository as any)._SIMULATED_DB_VERSION > user.version) {
+       throw new Error("Concurrency Error: The record has been modified by another transaction.");
+    }
+    
+    // Si pasa, actualizamos la "DB"
+    (MongoUserRepository as any)._SIMULATED_DB_VERSION = user.version + 1;
+    console.log(`[Mongo Driver] UPDATE SUCCESS. New Version in DB: ${(MongoUserRepository as any)._SIMULATED_DB_VERSION}`);
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -76,7 +116,8 @@ export class MongoUserRepository implements IUserRepository {
       email: "found@mongo.com",
       password_hash: "secret_hash_mongo",
       is_active: true, // Boolean nativo
-      created_at: new Date()
+      created_at: new Date(),
+      version: (MongoUserRepository as any)._SIMULATED_DB_VERSION || 1
     };
 
     // 2. Transformación

@@ -20,7 +20,8 @@ export class User {
     public readonly id: string,
     public readonly email: Email, // Value Object!
     public readonly passwordHash: string,
-    public readonly isActive: boolean = true
+    public readonly isActive: boolean = true,
+    public readonly version: number = 1 // Control de Concurrencia Optimista
   ) {}
 
   /**
@@ -32,7 +33,7 @@ export class User {
       throw new Error("El usuario ya está inactivo.");
     }
     // Retornamos una nueva instancia para inmutabilidad (opcional pero recomendado)
-    return new User(this.id, this.email, this.passwordHash, false);
+    return new User(this.id, this.email, this.passwordHash, false, this.version);
   }
 
   /**

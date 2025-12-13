@@ -18,4 +18,5 @@ export interface UserPersistenceDTO {
   password_hash: string; // Columna 'password_hash'
   is_active: number;     // En SQL a veces los booleanos son 0 o 1 (TINYINT)
   created_at: string;    // Fecha como string ISO o timestamp
+  version: number;       // Optimistic Locking
 }

@@ -34,7 +34,8 @@ export class UserMapper {
       raw.user_id,
       emailVO, // Pasamos el VO
       raw.password_hash,
-      isActiveBoolean
+      isActiveBoolean,
+      raw.version
     );
   }
 
@@ -48,7 +49,8 @@ export class UserMapper {
       email_address: user.email.getValue(), // Extraemos el valor primitivo
       password_hash: user.passwordHash,
       is_active: user.isActive ? 1 : 0, // Convertimos boolean a TINYINT
-      created_at: new Date().toISOString() // Dato de auditoría (ejemplo)
+      created_at: new Date().toISOString(), // Dato de auditoría (ejemplo)
+      version: user.version
     };
   }
 }

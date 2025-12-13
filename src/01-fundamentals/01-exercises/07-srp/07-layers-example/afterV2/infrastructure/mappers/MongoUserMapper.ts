@@ -24,7 +24,8 @@ export class MongoUserMapper {
       doc._id,           // Mapeamos _id -> id
       new Email(doc.email), // Reconstituir VO
       doc.password_hash,
-      doc.is_active
+      doc.is_active,
+      doc.version
     );
   }
 
@@ -37,7 +38,8 @@ export class MongoUserMapper {
       email: user.email.getValue(),
       password_hash: user.passwordHash,
       is_active: user.isActive,
-      created_at: new Date() // Ojo: En un sistema real, mantendrías la fecha de creación original if exists
+      created_at: new Date(), // Ojo: En un sistema real, mantendrías la fecha de creación original if exists
+      version: user.version
     };
   }
 }

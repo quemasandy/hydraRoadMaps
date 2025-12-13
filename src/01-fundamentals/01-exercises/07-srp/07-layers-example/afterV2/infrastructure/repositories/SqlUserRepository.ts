@@ -47,6 +47,18 @@ export class SqlUserRepository implements IUserRepository {
     return user;
   }
 
+  async update(user: User): Promise<void> {
+    // Implementación estándar (Last Write Wins) o sin checks de concurrencia
+    const persistenceData = UserMapper.toPersistence(user);
+    const sql = `UPDATE users SET email = ?, is_active = ?, version = ? WHERE id = ?`;
+    await this.db.query(sql, [
+      persistenceData.email_address, 
+      persistenceData.is_active, 
+      persistenceData.version,
+      persistenceData.user_id
+    ]);
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     // 1. Query a la BD
     const sql = "SELECT * FROM users WHERE email_address = ? LIMIT 1";
@@ -77,7 +89,8 @@ export class SqlUserRepository implements IUserRepository {
       email_address: "found@sql.com",
       password_hash: "hashed_secret_123",
       is_active: 1, // ¡Fíjate! Es un número, no un boolean
-      created_at: "2023-01-01T10:00:00Z"
+      created_at: "2023-01-01T10:00:00Z",
+      version: 1,
     };
 
     // Mapeo: DTO -> Entity

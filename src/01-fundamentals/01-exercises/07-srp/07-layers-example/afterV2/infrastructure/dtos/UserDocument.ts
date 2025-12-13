@@ -18,4 +18,5 @@ export interface UserDocument {
   password_hash: string;
   is_active: boolean;    // BSON soporta booleanos nativos
   created_at: Date;      // BSON soporta Date nativos
+  version: number;       // Control de Concurrencia Optimista
 }
